@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Asistan</title>
+  <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Asistan">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="robots" content="noindex">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #f6f5f1;
+      --surface: #ffffff;
+      --text: #1b1c1f;
+      --muted: #6b6e76;
+      --line: #e6e4dd;
+      --accent: #3b5bdb;
+      --accent-soft: #e8ecfb;
+      --danger: #c92a2a;
+      --radius: 16px;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121316;
+        --surface: #1b1d21;
+        --text: #ececee;
+        --muted: #9a9ca3;
+        --line: #2b2e34;
+        --accent: #8ea4ff;
+        --accent-soft: #232a45;
+        --danger: #ff8787;
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 48px; }
+    [hidden] { display: none !important; }
+
+    /* Üst bar */
+    header { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; letter-spacing: -0.02em; }
+    .brand img { width: 30px; height: 30px; border-radius: 8px; }
+    .icon-btn {
+      border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+      border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 14px; cursor: pointer;
+    }
+
+    /* Giriş */
+    .login { max-width: 360px; margin: 12vh auto 0; text-align: center; }
+    .login img { width: 64px; height: 64px; border-radius: 16px; margin-bottom: 12px; }
+    .login h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+    .login p { color: var(--muted); margin: 0 0 24px; font-size: 15px; }
+    .login form { display: grid; gap: 10px; text-align: left; }
+    input {
+      width: 100%; font: inherit; padding: 13px 14px; border-radius: 12px;
+      border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    .btn {
+      font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 13px 16px;
+      background: var(--accent); color: #fff; cursor: pointer;
+    }
+    @media (prefers-color-scheme: dark) { .btn { color: #0f1220; } }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .error { color: var(--danger); font-size: 14px; min-height: 20px; margin: 4px 0 0; }
+
+    /* Bildirim kutusu */
+    .notice {
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      background: var(--accent-soft); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px;
+      font-size: 15px;
+    }
+    .notice .btn { padding: 9px 14px; font-size: 15px; white-space: nowrap; }
+
+    /* Tarih seçici */
+    .days { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin: 0 -2px 4px; scrollbar-width: none; }
+    .days::-webkit-scrollbar { display: none; }
+    .day {
+      flex: 0 0 auto; font: inherit; font-size: 14px; padding: 7px 13px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer;
+    }
+    .day[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    /* Özet kartı */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 20px 8px; }
+    .card .meta { color: var(--muted); font-size: 14px; margin-bottom: 4px; }
+    .card h1 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 12px; line-height: 1.3; }
+    .md h2 { font-size: 17px; margin: 22px 0 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .md h2:first-child { border-top: 0; padding-top: 0; margin-top: 4px; }
+    .md p { margin: 0 0 12px; }
+    .md ul { padding-left: 20px; margin: 0 0 12px; }
+    .md li { margin: 6px 0; }
+    .md li::marker { color: var(--muted); }
+    .md strong { font-weight: 650; }
+    .md a { color: var(--accent); }
+    .md code { font-size: .9em; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
+    .empty { color: var(--muted); text-align: center; padding: 48px 12px; }
+    footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Giriş ekranı -->
+    <section id="login" class="login" hidden>
+      <img src="icon-192.png" alt="">
+      <h1>Asistan</h1>
+      <p>Günlük mail özetlerin</p>
+      <form id="loginForm">
+        <input id="email" type="email" autocomplete="username" placeholder="E-posta" required>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Şifre" required>
+        <button class="btn" id="loginBtn" type="submit">Giriş yap</button>
+        <p class="error" id="loginError" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Ana ekran -->
+    <section id="app" hidden>
+      <header>
+        <div class="brand"><img src="icon-192.png" alt="">Asistan</div>
+        <button class="icon-btn" id="logout" type="button">Çıkış</button>
+      </header>
+
+      <div class="notice" id="notice" hidden>
+        <span id="noticeText"></span>
+        <button class="btn" id="noticeBtn" type="button" hidden>Aç</button>
+      </div>
+
+      <nav class="days" id="days" aria-label="Günler"></nav>
+      <article class="card" id="card">
+        <div class="empty">Yükleniyor…</div>
+      </article>
+      <footer id="footer"></footer>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@16.4.1/lib/marked.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+  <script>
+  (function () {
+    const CFG = window.ASISTAN_CONFIG || {};
+    const $ = (id) => document.getElementById(id);
+    if (!/^https:\/\//.test(CFG.SUPABASE_URL || "") || !CFG.SUPABASE_PUBLISHABLE_KEY || CFG.SUPABASE_PUBLISHABLE_KEY.startsWith("__")) {
+      document.querySelector(".wrap").innerHTML = '<p class="empty">config.js henüz doldurulmamış.</p>';
+      return;
+    }
+    const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_PUBLISHABLE_KEY);
+
+    let digests = [];
+    let current = null;
+
+    // ---------- Yardımcılar ----------
+    const AYLAR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+    function todayStr(offsetDays = 0) {
+      const d = new Date(Date.now() + offsetDays * 86400000);
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(d);
+    }
+    function dayLabel(dateStr) {
+      if (dateStr === todayStr()) return "Bugün";
+      if (dateStr === todayStr(-1)) return "Dün";
+      const [, m, d] = dateStr.split("-").map(Number);
+      return `${d} ${AYLAR[m - 1]}`;
+    }
+    function renderMarkdown(md) {
+      // Resim/dış içerik yüklenmesin (mail içeriğinden gelen takip pikselleri vb.)
+      return DOMPurify.sanitize(marked.parse(md || ""), { USE_PROFILES: { html: true }, FORBID_TAGS: ["img", "style", "form", "input"] });
+    }
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    const pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+    // ---------- Ekranlar ----------
+    function showLogin() {
+      $("app").hidden = true;
+      $("login").hidden = false;
+    }
+    async function showApp() {
+      $("login").hidden = true;
+      $("app").hidden = false;
+      await loadDigests();
+      await refreshNotice();
+    }
+
+    // ---------- Giriş / çıkış ----------
+    $("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("loginError").textContent = "";
+      $("loginBtn").disabled = true;
+      const { error } = await sb.auth.signInWithPassword({
+        email: $("email").value.trim(),
+        password: $("password").value,
+      });
+      $("loginBtn").disabled = false;
+      if (error) {
+        $("loginError").textContent = "Giriş yapılamadı: e-posta veya şifre hatalı.";
+        return;
+      }
+      showApp();
+    });
+
+    $("logout").addEventListener("click", async () => {
+      await sb.auth.signOut();
+      showLogin();
+    });
+
+    // ---------- Özetler ----------
+    async function loadDigests() {
+      const { data, error } = await sb
+        .from("digests")
+        .select("digest_date,title,summary_md,email_count,created_at")
+        .order("digest_date", { ascending: false })
+        .limit(60);
+
+      if (error) {
+        $("card").innerHTML = `<div class="empty">Özetler yüklenemedi.<br><small>${DOMPurify.sanitize(error.message)}</small></div>`;
+        return;
+      }
+      digests = data || [];
+      if (!digests.length) {
+        $("days").innerHTML = "";
+        $("card").innerHTML = '<div class="empty">Henüz özet yok.<br>İlk özet yarın sabah 09:00\'da gelecek.</div>';
+        return;
+      }
+      const wanted = new URLSearchParams(location.search).get("d");
+      const pick = digests.find((d) => d.digest_date === wanted) || digests[0];
+      renderDays();
+      select(pick.digest_date);
+    }
+
+    function renderDays() {
+      const nav = $("days");
+      nav.innerHTML = "";
+      for (const d of digests) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "day";
+        b.textContent = dayLabel(d.digest_date);
+        b.dataset.date = d.digest_date;
+        b.addEventListener("click", () => select(d.digest_date));
+        nav.appendChild(b);
+      }
+    }
+
+    function select(date) {
+      current = digests.find((d) => d.digest_date === date);
+      if (!current) return;
+      for (const b of $("days").children) b.setAttribute("aria-pressed", String(b.dataset.date === date));
+      $("card").innerHTML = "";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `${current.email_count} mail`;
+      const h = document.createElement("h1");
+      h.textContent = current.title;
+      const body = document.createElement("div");
+      body.className = "md";
+      body.innerHTML = renderMarkdown(current.summary_md);
+      $("card").append(meta, h, body);
+      const url = new URL(location.href);
+      url.searchParams.set("d", date);
+      history.replaceState(null, "", url);
+    }
+
+    // ---------- Bildirimler ----------
+    function setNotice(text, buttonText) {
+      $("notice").hidden = !text;
+      $("noticeText").textContent = text || "";
+      $("noticeBtn").hidden = !buttonText;
+      if (buttonText) $("noticeBtn").textContent = buttonText;
+    }
+
+    function base64ToUint8(b64) {
+      const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+      const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+      return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+    }
+
+    async function saveSubscription(sub) {
+      const j = sub.toJSON();
+      const { error } = await sb.from("push_subscriptions").upsert({
+        endpoint: j.endpoint,
+        p256dh: j.keys.p256dh,
+        auth: j.keys.auth,
+      });
+      if (error) throw error;
+    }
+
+    async function refreshNotice() {
+      if (!pushSupported) {
+        if (isIOS && !isStandalone) {
+          setNotice("Bildirim için: Safari'de Paylaş → “Ana Ekrana Ekle”, sonra uygulamayı ana ekrandan aç.");
+        } else {
+          setNotice("");
+        }
+        return;
+      }
+      try {
+        const reg = await navigator.serviceWorker.register("sw.js");
+        const existing = await reg.pushManager.getSubscription();
+        if (Notification.permission === "granted" && existing) {
+          await saveSubscription(existing); // kayıt güncel kalsın
+          setNotice("");
+          $("footer").textContent = "🔔 Bildirimler açık · her sabah 09:00";
+          return;
+        }
+        if (Notification.permission === "denied") {
+          setNotice("Bildirimler kapalı. Açmak için telefon Ayarları → Bildirimler → Asistan.");
+          return;
+        }
+        setNotice("Her sabah özet hazır olunca bildirim al.", "Bildirimleri aç");
+      } catch (err) {
+        setNotice("Bildirim ayarlanamadı: " + err.message);
+      }
+    }
+
+    $("noticeBtn").addEventListener("click", async () => {
+      $("noticeBtn").disabled = true;
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          setNotice("Bildirim izni verilmedi.");
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = (await reg.pushManager.getSubscription()) ||
+          (await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: base64ToUint8(CFG.VAPID_PUBLIC_KEY),
+          }));
+        await saveSubscription(sub);
+        setNotice("");
+        $("footer").textContent = "🔔 Bildirimler açık · her sabah 09:00";
+      } catch (err) {
+        setNotice("Bildirim açılamadı: " + err.message);
+      } finally {
+        $("noticeBtn").disabled = false;
+      }
+    });
+
+    // ---------- Başlat ----------
+    sb.auth.getSession().then(({ data }) => (data.session ? showApp() : showLogin()));
+  })();
+  </script>
+</body>
+</html>
