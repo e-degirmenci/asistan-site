@@ -111,6 +111,18 @@
     .md a { color: var(--accent); }
     .md code { font-size: .9em; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
     .empty { color: var(--muted); text-align: center; padding: 48px 12px; }
+
+    /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
+    .open-mail {
+      position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; margin-top: 16px; padding: 15px 16px; border-radius: 14px;
+      font: inherit; font-weight: 600; text-decoration: none;
+      background: var(--text); color: var(--bg); border: 0; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+    }
+    .open-mail:active { transform: scale(.98); }
+    .open-mail svg { width: 22px; height: 22px; flex: 0 0 auto; }
     footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 24px; }
   </style>
 </head>
@@ -146,6 +158,13 @@
       <article class="card" id="card">
         <div class="empty">Yükleniyor…</div>
       </article>
+      <a class="open-mail" id="openMail" href="https://mail.google.com/mail/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2.5"></rect>
+          <path d="M3.5 6.5 12 13l8.5-6.5"></path>
+        </svg>
+        Gmail'i aç
+      </a>
       <footer id="footer"></footer>
     </section>
   </div>
@@ -353,6 +372,22 @@
       } finally {
         $("noticeBtn").disabled = false;
       }
+    });
+
+    // ---------- Gmail'i aç ----------
+    // iPhone'da Gmail uygulamasını açar; uygulama yüklü değilse web'deki Gmail'e geçer.
+    // Diğer cihazlarda mail.google.com açılır (Android bunu Gmail uygulamasında açar).
+    $("openMail").addEventListener("click", (e) => {
+      if (!isIOS) return; // normal link: mail.google.com
+      e.preventDefault();
+      let left = false;
+      const onHide = () => { if (document.hidden) left = true; };
+      document.addEventListener("visibilitychange", onHide);
+      window.location.href = "googlegmail://";
+      setTimeout(() => {
+        document.removeEventListener("visibilitychange", onHide);
+        if (!left && !document.hidden) window.location.href = "https://mail.google.com/mail/";
+      }, 1500);
     });
 
     // ---------- Başlat ----------
