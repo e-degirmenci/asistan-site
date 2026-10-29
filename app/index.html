@@ -112,6 +112,45 @@
     .md code { font-size: .9em; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
     .empty { color: var(--muted); text-align: center; padding: 48px 12px; }
 
+    /* Sekmeler */
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 16px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    }
+    .tab {
+      font: inherit; font-size: 15px; font-weight: 600; padding: 10px 8px; border: 0; border-radius: 10px;
+      background: transparent; color: var(--muted); cursor: pointer;
+    }
+    .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
+
+    /* Hava durumu */
+    .wx-now { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .wx-now .big { font-size: 56px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+    .wx-now .icon { font-size: 52px; line-height: 1; }
+    .wx-now .desc { font-size: 17px; font-weight: 600; margin-top: 6px; }
+    .wx-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .wx-tips { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 15px; }
+    .wx-tips p { margin: 2px 0; }
+    .wx-h { font-size: 15px; font-weight: 650; margin: 22px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .wx-hours { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px 4px; }
+    .wx-hours::-webkit-scrollbar { display: none; }
+    .wx-hour {
+      flex: 0 0 auto; width: 58px; text-align: center; padding: 10px 4px; border-radius: 12px;
+      background: var(--bg); font-size: 14px;
+    }
+    .wx-hour .t { color: var(--muted); font-size: 13px; }
+    .wx-hour .e { font-size: 22px; margin: 4px 0; }
+    .wx-hour .r { color: var(--accent); font-size: 12px; min-height: 16px; }
+    .wx-days { list-style: none; padding: 0; margin: 0; }
+    .wx-days li {
+      display: grid; grid-template-columns: 84px 30px 1fr auto; align-items: center; gap: 8px;
+      padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+    }
+    .wx-days li:last-child { border-bottom: 0; }
+    .wx-days .r { color: var(--accent); font-size: 13px; }
+    .wx-days .mm { font-variant-numeric: tabular-nums; }
+    .wx-days .mm span { color: var(--muted); }
+
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
       position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
@@ -154,17 +193,33 @@
         <button class="btn" id="noticeBtn" type="button" hidden>Aç</button>
       </div>
 
-      <nav class="days" id="days" aria-label="Günler"></nav>
-      <article class="card" id="card">
-        <div class="empty">Yükleniyor…</div>
-      </article>
-      <a class="open-mail" id="openMail" href="https://mail.google.com/mail/">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="14" rx="2.5"></rect>
-          <path d="M3.5 6.5 12 13l8.5-6.5"></path>
-        </svg>
-        Gmail'i aç
-      </a>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 E-mailler</button>
+        <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false">🌤️ Hava durumu</button>
+      </div>
+
+      <!-- Sekme: E-mailler -->
+      <div id="tab-mail" role="tabpanel">
+        <nav class="days" id="days" aria-label="Günler"></nav>
+        <article class="card" id="card">
+          <div class="empty">Yükleniyor…</div>
+        </article>
+        <a class="open-mail" id="openMail" href="https://mail.google.com/mail/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2.5"></rect>
+            <path d="M3.5 6.5 12 13l8.5-6.5"></path>
+          </svg>
+          Gmail'i aç
+        </a>
+      </div>
+
+      <!-- Sekme: Hava durumu -->
+      <div id="tab-hava" role="tabpanel" hidden>
+        <article class="card" id="wx">
+          <div class="empty">Yükleniyor…</div>
+        </article>
+      </div>
+
       <footer id="footer"></footer>
     </section>
   </div>
@@ -293,9 +348,6 @@
       body.className = "md";
       body.innerHTML = renderMarkdown(current.summary_md);
       $("card").append(meta, h, body);
-      const url = new URL(location.href);
-      url.searchParams.set("d", date);
-      history.replaceState(null, "", url);
     }
 
     // ---------- Bildirimler ----------
@@ -374,6 +426,128 @@
       }
     });
 
+    // ---------- Sekmeler ----------
+    let wxLoadedAt = 0;
+    function showTab(name) {
+      for (const b of document.querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.tab === name));
+      $("tab-mail").hidden = name !== "mail";
+      $("tab-hava").hidden = name !== "hava";
+      try { localStorage.setItem("asistan-tab", name); } catch (e) { /* önemli değil */ }
+      // Hava durumu: ilk açılışta ve 15 dakikadan eskiyse yenile
+      if (name === "hava" && Date.now() - wxLoadedAt > 15 * 60 * 1000) loadWeather();
+    }
+    for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
+
+    // ---------- Hava durumu (Münih, Open-Meteo, canlı) ----------
+    const WMO = {
+      0: ["Açık", "☀️"], 1: ["Çoğunlukla açık", "🌤️"], 2: ["Parçalı bulutlu", "⛅"], 3: ["Kapalı", "☁️"],
+      45: ["Sisli", "🌫️"], 48: ["Kırağılı sis", "🌫️"],
+      51: ["Hafif çisenti", "🌦️"], 53: ["Çisenti", "🌦️"], 55: ["Yoğun çisenti", "🌧️"],
+      56: ["Donan çisenti", "🌧️"], 57: ["Yoğun donan çisenti", "🌧️"],
+      61: ["Hafif yağmur", "🌦️"], 63: ["Yağmurlu", "🌧️"], 65: ["Şiddetli yağmur", "🌧️"],
+      66: ["Donan yağmur", "🌧️"], 67: ["Şiddetli donan yağmur", "🌧️"],
+      71: ["Hafif kar", "🌨️"], 73: ["Karlı", "🌨️"], 75: ["Yoğun kar", "❄️"], 77: ["Kar taneleri", "🌨️"],
+      80: ["Hafif sağanak", "🌦️"], 81: ["Sağanak", "🌧️"], 82: ["Şiddetli sağanak", "⛈️"],
+      85: ["Kar sağanağı", "🌨️"], 86: ["Yoğun kar sağanağı", "❄️"],
+      95: ["Gök gürültülü fırtına", "⛈️"], 96: ["Dolulu fırtına", "⛈️"], 99: ["Şiddetli dolulu fırtına", "⛈️"],
+    };
+    const SNOW = [71, 73, 75, 77, 85, 86], STORM = [95, 96, 99];
+    const GUN = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    const wmo = (c) => WMO[c] || ["Bilinmiyor", "🌡️"];
+    const icon = (c, isDay) => (!isDay && (c === 0 || c === 1)) ? "🌙" : wmo(c)[1];
+    const r0 = (x) => Math.round(x);
+
+    async function loadWeather() {
+      const params = new URLSearchParams({
+        latitude: "48.137", longitude: "11.575", timezone: "Europe/Berlin", forecast_days: "7",
+        current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day",
+        hourly: "temperature_2m,precipitation_probability,weather_code,is_day",
+        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max",
+      });
+      try {
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        renderWeather(await res.json());
+        wxLoadedAt = Date.now();
+      } catch (err) {
+        $("wx").innerHTML = '<div class="empty">Hava durumu alınamadı.<br><small>İnternet bağlantını kontrol edip sekmeye tekrar dokun.</small></div>';
+      }
+    }
+
+    function renderWeather(w) {
+      const c = w.current, d = w.daily, h = w.hourly;
+      const today = d.time[0];
+      const tmin = r0(d.temperature_2m_min[0]), tmax = r0(d.temperature_2m_max[0]);
+
+      // Şu andan itibaren 24 saat
+      const nowHour = c.time.slice(0, 13);
+      let start = h.time.findIndex((t) => t.slice(0, 13) === nowHour);
+      if (start < 0) start = 0;
+      const hours = [];
+      for (let i = start; i < Math.min(start + 24, h.time.length); i++) hours.push(i);
+
+      // Bugünün (08–22) yağış penceresi ve uyarılar
+      const rainy = [], codes = new Set([d.weather_code[0]]);
+      h.time.forEach((t, i) => {
+        if (t.slice(0, 10) !== today) return;
+        const hr = +t.slice(11, 13);
+        if (hr < 8 || hr > 22) return;
+        codes.add(h.weather_code[i]);
+        if ((h.precipitation_probability[i] ?? 0) >= 50) rainy.push(hr);
+      });
+      const tips = [];
+      if (rainy.length) {
+        const span = rainy[rainy.length - 1] + 1 - rainy[0];
+        const when = span >= 12 ? "Gün boyu" : `${String(rainy[0]).padStart(2, "0")}:00–${String(rainy[rainy.length - 1] + 1).padStart(2, "0")}:00 arası`;
+        tips.push(`🌧️ ${when} yağış muhtemel, ☂️ şemsiyeni al.`);
+      }
+      if (STORM.some((x) => codes.has(x))) tips.push("⛈️ Gök gürültülü fırtına bekleniyor.");
+      if (SNOW.some((x) => codes.has(x))) tips.push("❄️ Kar bekleniyor, kaygan yollara dikkat.");
+      if (tmin <= 0) tips.push("🧊 Sabah/akşam buzlanma olabilir.");
+      if (tmax <= 5) tips.push("🧥 Soğuk, kalın giyin.");
+      if ((d.wind_speed_10m_max[0] ?? 0) >= 40) tips.push("💨 Kuvvetli rüzgar.");
+      if (tmax >= 28) tips.push("🥵 Sıcak, bol su iç.");
+
+      const [desc] = wmo(c.weather_code);
+      const hm = (iso) => iso.slice(11, 16);
+      let html = `
+        <div class="meta">Münih · şimdi</div>
+        <div class="wx-now">
+          <div>
+            <div class="big">${r0(c.temperature_2m)}°</div>
+            <div class="desc">${desc}</div>
+            <div class="wx-sub">Hissedilen ${r0(c.apparent_temperature)}° · En düşük ${tmin}° · En yüksek ${tmax}°</div>
+            <div class="wx-sub">💨 ${r0(c.wind_speed_10m)} km/s · 💧 %${r0(c.relative_humidity_2m)} · 🌅 ${hm(d.sunrise[0])} · 🌇 ${hm(d.sunset[0])}</div>
+          </div>
+          <div class="icon">${icon(c.weather_code, c.is_day)}</div>
+        </div>`;
+      if (tips.length) html += `<div class="wx-tips">${tips.map((t) => `<p>${t}</p>`).join("")}</div>`;
+
+      html += `<div class="wx-h">Saatlik</div><div class="wx-hours">` + hours.map((i, k) => {
+        const p = h.precipitation_probability[i] ?? 0;
+        return `<div class="wx-hour">
+          <div class="t">${k === 0 ? "Şimdi" : h.time[i].slice(11, 13)}</div>
+          <div class="e">${icon(h.weather_code[i], h.is_day[i])}</div>
+          <div>${r0(h.temperature_2m[i])}°</div>
+          <div class="r">${p >= 20 ? "%" + p : ""}</div>
+        </div>`;
+      }).join("") + `</div>`;
+
+      html += `<div class="wx-h">7 gün</div><ul class="wx-days">` + d.time.map((t, i) => {
+        const day = i === 0 ? "Bugün" : i === 1 ? "Yarın" : GUN[new Date(t + "T12:00:00").getDay()];
+        const p = d.precipitation_probability_max[i] ?? 0;
+        return `<li>
+          <span>${day}</span>
+          <span>${wmo(d.weather_code[i])[1]}</span>
+          <span class="r">${p >= 20 ? "☔ %" + p : ""}</span>
+          <span class="mm"><span>${r0(d.temperature_2m_min[i])}°</span> / ${r0(d.temperature_2m_max[i])}°</span>
+        </li>`;
+      }).join("") + `</ul>`;
+
+      html += `<div class="wx-sub" style="margin:14px 0 6px">Güncellendi ${new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} · Kaynak: Open-Meteo</div>`;
+      $("wx").innerHTML = html;
+    }
+
     // ---------- Gmail'i aç ----------
     // iPhone'da Gmail uygulamasını açar; uygulama yüklü değilse web'deki Gmail'e geçer.
     // Diğer cihazlarda mail.google.com açılır (Android bunu Gmail uygulamasında açar).
@@ -391,6 +565,14 @@
     });
 
     // ---------- Başlat ----------
+    // Bildirimden (?d=...) gelindiyse mailler, değilse son açık bırakılan sekme
+    let startTab = "mail";
+    try { startTab = localStorage.getItem("asistan-tab") || "mail"; } catch (e) { /* önemli değil */ }
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("tab") === "hava") startTab = "hava";
+    if (qs.get("d")) startTab = "mail";
+    showTab(startTab === "hava" ? "hava" : "mail");
+
     sb.auth.getSession().then(({ data }) => (data.session ? showApp() : showLogin()));
   })();
   </script>
