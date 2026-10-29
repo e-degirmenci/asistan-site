@@ -124,12 +124,15 @@
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
 
     /* Ulaşım */
-    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .seg button {
-      font: inherit; font-size: 15px; font-weight: 600; padding: 11px 8px; border-radius: 12px; cursor: pointer;
+    .picker { display: grid; gap: 8px; margin-bottom: 12px; }
+    .pick-row { display: grid; grid-template-columns: 62px 1fr; align-items: center; gap: 8px; }
+    .pick-row > span { color: var(--muted); font-size: 13px; font-weight: 600; }
+    .seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .seg3 button {
+      font: inherit; font-size: 14px; font-weight: 600; padding: 9px 4px; border-radius: 11px; cursor: pointer;
       border: 1px solid var(--line); background: var(--surface); color: var(--text);
     }
-    .seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .seg3 button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
     .conn { padding: 14px 0; border-bottom: 1px solid var(--line); }
     .conn:first-of-type { padding-top: 4px; }
     .conn:last-of-type { border-bottom: 0; }
@@ -143,7 +146,7 @@
       display: inline-block; min-width: 30px; text-align: center; font-size: 13px; font-weight: 700;
       padding: 2px 6px; border-radius: 6px; color: #fff;
     }
-    .line.U2 { background: #c3022d; } .line.U3 { background: #ec6726; }
+    .line.U2 { background: #c3022d; } .line.U3 { background: #ec6726; } .line.U6 { background: #0065ae; }
     .xfer { color: var(--muted); font-size: 13px; padding-left: 2px; }
     .ontime { color: #2f9e44; font-size: 13px; }
     .late { color: var(--danger); font-size: 13px; font-weight: 650; }
@@ -261,10 +264,7 @@
 
       <!-- Sekme: Ulaşım -->
       <div id="tab-ulasim" role="tabpanel" hidden>
-        <div class="seg">
-          <button type="button" data-route="uni" aria-pressed="true">🏠 → 🎓 Üniye</button>
-          <button type="button" data-route="eve" aria-pressed="false">🎓 → 🏠 Eve</button>
-        </div>
+        <div class="picker" id="picker"></div>
         <article class="card" id="conns"><div class="empty">Yükleniyor…</div></article>
         <article class="card status" id="transitStatus" style="margin-top:14px" hidden></article>
       </div>
@@ -649,57 +649,63 @@
     }
 
     // ---------- Ulaşım (MVG, canlı) ----------
-    // Rota: Milbertshofen (U2) → Scheidplatz'ta aktarma → U3 → Universität (ve tersi)
+    // Yerler ve rotalar. Yeni bir yer eklemek: places'e ekle, routes'a "nereden-nereye" rotalarını yaz.
     const TRANSIT = {
-      stations: { home: "de:09162:740", transfer: "de:09162:400", uni: "de:09162:70" },
-      names: { home: "Milbertshofen", transfer: "Scheidplatz", uni: "Universität" },
-      walkMin: { home: 6, uni: 0 },      // evden Milbertshofen'e ~5-6 dk yürüme; üniversitede sadece metro saati
-      transferToleranceMin: 1,           // Scheidplatz'ta U2 ve U3 birbirini bekliyor: 1 dk fark bile yetiyor
-      lines: ["U2", "U3"],
+      places: {
+        home: { label: "Ev", icon: "🏠", station: "de:09162:740", stop: "Milbertshofen", walk: 6, leaveText: "Evden çıkış", arriveText: "Eve varış" },
+        uni:  { label: "Üni", icon: "🎓", station: "de:09162:70", stop: "Universität", walk: 0 },
+        gym:  { label: "Spor", icon: "🏋️", station: "de:09162:80", stop: "Giselastraße", walk: 4, leaveText: "Salondan çıkış", arriveText: "Salona varış" },
+      },
+      transfer: { station: "de:09162:400", stop: "Scheidplatz" },
+      transferToleranceMin: 1,          // Scheidplatz'ta U2 ve U3 birbirini bekliyor: 1 dk fark bile yetiyor
+      watchLines: ["U2", "U3", "U6"],   // aksaklık takibi
+      // Bacak: [hatlar, yön (H = güney, R = kuzey), nereden, nereye, bu durakta biten seferler (oraya ulaşmaz), tahmini dk]
       routes: {
-        uni: {
-          from: "home", via: "transfer", to: "uni",
-          leg1: { line: "U2", dir: "H", notEndingAt: [] },
-          leg2: { line: "U3", dir: "H", notEndingAt: ["Bonner Platz", "Münchner Freiheit"] },
-          fallbackMin: [2, 7],           // sefer eşleşmezse tahmini yolculuk süreleri
-        },
-        eve: {
-          from: "uni", via: "transfer", to: "home",
-          leg1: { line: "U3", dir: "R", notEndingAt: ["Giselastraße", "Münchner Freiheit", "Bonner Platz"] },
-          leg2: { line: "U2", dir: "R", notEndingAt: ["Scheidplatz"] },
-          fallbackMin: [7, 2],
-        },
+        "home-uni": [[["U2"], "H", "home", "transfer", [], 2], [["U3"], "H", "transfer", "uni", ["Bonner Platz", "Münchner Freiheit"], 7]],
+        "uni-home": [[["U3"], "R", "uni", "transfer", ["Giselastraße", "Münchner Freiheit", "Bonner Platz"], 7], [["U2"], "R", "transfer", "home", ["Scheidplatz"], 2]],
+        "home-gym": [[["U2"], "H", "home", "transfer", [], 2], [["U3"], "H", "transfer", "gym", ["Bonner Platz", "Münchner Freiheit"], 6]],
+        "gym-home": [[["U3"], "R", "gym", "transfer", ["Münchner Freiheit", "Bonner Platz"], 6], [["U2"], "R", "transfer", "home", ["Scheidplatz"], 2]],
+        "uni-gym":  [[["U3", "U6"], "R", "uni", "gym", [], 2]],
+        "gym-uni":  [[["U3", "U6"], "H", "gym", "uni", [], 2]],
       },
     };
-    let route = new Date().getHours() < 13 ? "uni" : "eve";
+    let tFrom = new Date().getHours() < 13 ? "home" : "uni";
+    let tTo = new Date().getHours() < 13 ? "uni" : "home";
     let transitTimer = null;
     const MIN = 60 * 1000;
     const depT = (d) => d.realtimeDepartureTime ?? d.plannedDepartureTime;
     const dirOf = (d) => (d.lineId || "").split(":")[3] || "";
     const hhmm = (ms) => new Date(ms).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
     const esc = (x) => String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const stationOf = (k) => (k === "transfer" ? TRANSIT.transfer.station : TRANSIT.places[k].station);
+    const stopOf = (k) => (k === "transfer" ? TRANSIT.transfer.stop : TRANSIT.places[k].stop);
+    const legsOf = (key) => TRANSIT.routes[key].map(([lines, dir, from, to, notEndingAt, fallbackMin]) => ({ lines, dir, from, to, notEndingAt, fallbackMin }));
 
-    function findConnections(r, data, now) {
-      const S = TRANSIT.stations;
-      const A = data[S[r.from]] || [], B = data[S[r.via]] || [], C = data[S[r.to]] || [];
-      const fits = (d, leg) => d.label === leg.line && dirOf(d) === leg.dir && !leg.notEndingAt.includes(d.destination);
-      const sameTrip = (list, d) => list.find((x) => x.label === d.label && dirOf(x) === dirOf(d) && x.tripCode === d.tripCode && depT(x) >= depT(d));
-      const first = A.filter((d) => fits(d, r.leg1) && depT(d) >= now - 30 * 1000).sort((a, b) => depT(a) - depT(b));
-      const second = B.filter((d) => fits(d, r.leg2) && !d.cancelled).sort((a, b) => depT(a) - depT(b));
-      const byTrain = new Map();
+    function findConnections(key, data, now) {
+      const legs = legsOf(key);
+      const fits = (d, leg) => leg.lines.includes(d.label) && dirOf(d) === leg.dir && !leg.notEndingAt.includes(d.destination);
+      const sameTrip = (list, d) => (list || []).find((x) => x.label === d.label && dirOf(x) === dirOf(d) && x.tripCode === d.tripCode && depT(x) >= depT(d));
+      const arrival = (leg, d) => {
+        const at = sameTrip(data[stationOf(leg.to)], d);
+        return { t: at ? depT(at) : depT(d) + leg.fallbackMin * MIN, est: !at };
+      };
+      const [L1, L2] = legs;
+      const first = (data[stationOf(L1.from)] || []).filter((d) => fits(d, L1) && depT(d) >= now - 30 * 1000).sort((a, b) => depT(a) - depT(b));
+      const second = L2 ? (data[stationOf(L2.from)] || []).filter((d) => fits(d, L2) && !d.cancelled).sort((a, b) => depT(a) - depT(b)) : [];
+      const out = new Map();
       for (const d1 of first) {
         if (d1.cancelled) continue;
-        const atB = sameTrip(B, d1);
-        const arrB = atB ? depT(atB) : depT(d1) + r.fallbackMin[0] * MIN;
-        const d2 = second.find((x) => depT(x) >= arrB - TRANSIT.transferToleranceMin * MIN);
+        const a1 = arrival(L1, d1);
+        if (!L2) { out.set(d1.label + d1.tripCode, { steps: [{ d: d1, leg: L1, arr: a1.t }], arr: a1.t, est: a1.est }); continue; }
+        const d2 = second.find((x) => depT(x) >= a1.t - TRANSIT.transferToleranceMin * MIN);
         if (!d2) continue;
-        const atC = sameTrip(C, d2);
-        const arrC = atC ? depT(atC) : depT(d2) + r.fallbackMin[1] * MIN;
+        const a2 = arrival(L2, d2);
         // Aynı aktarma trenine yetişen birden fazla tren varsa en geç çıkılanı göster
-        byTrain.set(d2.tripCode + "|" + depT(d2), { d1, d2, arrB, arrC, estimated: !atB || !atC });
+        out.set(d2.label + d2.tripCode, { steps: [{ d: d1, leg: L1, arr: a1.t }, { d: d2, leg: L2, arr: a2.t }], arr: a2.t, est: a1.est || a2.est });
       }
+      const list = [...out.values()].sort((a, b) => depT(a.steps[0].d) - depT(b.steps[0].d)).slice(0, 4);
       const cancelled = first.filter((d) => d.cancelled).slice(0, 3);
-      return { list: [...byTrain.values()].sort((a, b) => depT(a.d1) - depT(b.d1)).slice(0, 4), cancelled };
+      return { list, cancelled };
     }
 
     function delayTag(d) {
@@ -710,29 +716,41 @@
     }
 
     function renderConnections(res, now) {
-      const r = TRANSIT.routes[route], N = TRANSIT.names;
-      const walk = TRANSIT.walkMin[r.from] || 0;
+      const from = TRANSIT.places[tFrom], to = TRANSIT.places[tTo];
       if (!res.list.length) {
         $("conns").innerHTML = '<div class="empty">Önümüzdeki dakikalarda uygun bağlantı bulunamadı.</div>';
         return;
       }
-      let html = res.list.map(({ d1, d2, arrB, arrC, estimated }) => {
-        const leave = depT(d1) - walk * MIN;
+      let html = res.list.map(({ steps, arr, est }) => {
+        const d1 = steps[0].d;
+        const leave = depT(d1) - (from.walk || 0) * MIN;
         const inMin = Math.round((leave - now) / MIN);
-        const wait = Math.max(0, Math.round((depT(d2) - arrB) / MIN));
-        const xferText = wait <= 1 ? "hemen aktarma (trenler bekleşiyor)" : `${wait} dk bekleme`;
+        const walk = from.walk || 0;
+        const countdown = inMin < 0 ? (walk ? "yürüyerek yetişilmez" : "şimdi")
+          : inMin === 0 ? (walk ? "hemen çık" : "şimdi")
+          : walk ? `${inMin} dk sonra çık` : `${inMin} dk sonra`;
+        const tilde = est ? "~" : "";
+        let legs = "";
+        if (walk) legs += `<div class="walk">🚶 ${from.leaveText}: ${hhmm(leave)} (${walk} dk yürüme)</div>`;
+        if (steps.length === 1) {
+          const s = steps[0];
+          legs += `<div class="leg"><span class="line ${esc(s.d.label)}">${esc(s.d.label)}</span> ${hhmm(depT(s.d))} ${stopOf(s.leg.from)} → ${tilde}${hhmm(s.arr)} ${stopOf(s.leg.to)} ${delayTag(s.d)}</div>`;
+        } else {
+          const [s1, s2] = steps;
+          const wait = Math.max(0, Math.round((depT(s2.d) - s1.arr) / MIN));
+          const xfer = wait <= 1 ? "hemen aktarma (trenler bekleşiyor)" : `${wait} dk bekleme`;
+          legs += `<div class="leg"><span class="line ${esc(s1.d.label)}">${esc(s1.d.label)}</span> ${hhmm(depT(s1.d))} ${stopOf(s1.leg.from)} ${delayTag(s1.d)}</div>
+            <div class="xfer">↓ ${stopOf(s1.leg.to)} · ${xfer}</div>
+            <div class="leg"><span class="line ${esc(s2.d.label)}">${esc(s2.d.label)}</span> ${hhmm(depT(s2.d))} → ${tilde}${hhmm(s2.arr)} ${stopOf(s2.leg.to)} ${delayTag(s2.d)}</div>`;
+        }
+        if (to.walk) legs += `<div class="walk">${to.icon} ${to.arriveText}: ~${hhmm(arr + to.walk * MIN)}</div>`;
         return `<div class="conn">
           <div class="conn-top">
-            <span class="times">${hhmm(depT(d1))} → ${estimated ? "~" : ""}${hhmm(arrC)}</span>
-            <span class="dur">${Math.round((arrC - depT(d1)) / MIN)} dk</span>
-            <span class="in">${inMin < 0 ? (walk ? "yürüyerek yetişilmez" : "şimdi") : inMin === 0 ? (walk ? "hemen çık" : "şimdi") : (walk ? `${inMin} dk sonra çık` : `${inMin} dk sonra`)}</span>
+            <span class="times">${hhmm(depT(d1))} → ${tilde}${hhmm(arr)}</span>
+            <span class="dur">${Math.round((arr - depT(d1)) / MIN)} dk</span>
+            <span class="in">${countdown}</span>
           </div>
-          <div class="legs">
-            ${walk ? `<div class="walk">🚶 Evden çıkış: ${hhmm(leave)} (${walk} dk yürüme)</div>` : ""}
-            <div class="leg"><span class="line ${esc(d1.label)}">${esc(d1.label)}</span> ${hhmm(depT(d1))} ${N[r.from]} ${delayTag(d1)}</div>
-            <div class="xfer">↓ ${N[r.via]} · ${xferText}</div>
-            <div class="leg"><span class="line ${esc(d2.label)}">${esc(d2.label)}</span> ${hhmm(depT(d2))} → ${estimated ? "~" : ""}${hhmm(arrC)} ${N[r.to]} ${delayTag(d2)}</div>
-          </div>
+          <div class="legs">${legs}</div>
         </div>`;
       }).join("");
       if (res.cancelled.length) {
@@ -743,22 +761,23 @@
       $("transitRefresh").addEventListener("click", loadTransit);
     }
 
-    function renderStatus(messages) {
+    function renderStatus(messages, lines) {
       const box = $("transitStatus");
       box.hidden = false;
       const now = Date.now();
       const active = (messages || []).filter((m) => {
+        if (!(m.lines || []).some((l) => lines.includes(l.label))) return false;
         const spans = m.incidentDurations?.length ? m.incidentDurations : [{ from: m.validFrom, to: m.validTo }];
         return spans.some((s) => (s.from ?? 0) <= now + 24 * 60 * MIN && (s.to ?? 9e15) >= now);
       });
-      const title = `<h3>🚇 ${TRANSIT.lines.join(" / ")} durumu</h3>`;
+      const title = `<h3>🚇 ${lines.join(" / ")} durumu</h3>`;
       if (!active.length) { box.innerHTML = title + '<div class="ok">✅ Bilinen aksaklık yok.</div>'; return; }
       box.innerHTML = title + active.map((m) => {
-        const lines = [...new Set((m.lines || []).map((l) => l.label).filter((l) => TRANSIT.lines.includes(l)))].join("/");
+        const ls = [...new Set((m.lines || []).map((l) => l.label).filter((l) => lines.includes(l)))].join("/");
         const icon = m.type === "INCIDENT" ? "⚠️" : "🚧";
-        const until = m.validTo ? ` · bitiş ${new Date(m.validTo).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}` : "";
+        const until = m.validTo ? "bitiş " + new Date(m.validTo).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) : "";
         const body = DOMPurify.sanitize(m.description || "", { ALLOWED_TAGS: ["br", "p", "ul", "li", "b", "strong", "em"] });
-        return `<details><summary>${icon} ${esc(lines)}: ${esc(m.title)}</summary><div class="msg-body">${body}<div class="est">${until.slice(3)}</div></div></details>`;
+        return `<details><summary>${icon} ${esc(ls)}: ${esc(m.title)}</summary><div class="msg-body">${body}<div class="est">${until}</div></div></details>`;
       }).join("");
     }
 
@@ -771,27 +790,44 @@
       return data;
     }
 
+    function renderPicker() {
+      const P = TRANSIT.places;
+      const row = (kind, sel) => Object.entries(P).map(([k, p]) =>
+        `<button type="button" data-${kind}="${k}" aria-pressed="${k === sel}">${p.icon} ${p.label}</button>`).join("");
+      $("picker").innerHTML = `<div class="pick-row"><span>Nereden</span><div class="seg3">${row("from", tFrom)}</div></div>
+        <div class="pick-row"><span>Nereye</span><div class="seg3">${row("to", tTo)}</div></div>`;
+      for (const b of $("picker").querySelectorAll("button")) {
+        b.addEventListener("click", () => {
+          const prevFrom = tFrom, prevTo = tTo;
+          if (b.dataset.from) { tFrom = b.dataset.from; if (tFrom === tTo) tTo = prevFrom; }
+          if (b.dataset.to) { tTo = b.dataset.to; if (tTo === tFrom) tFrom = prevTo; }
+          renderPicker();
+          $("conns").innerHTML = '<div class="empty">Yükleniyor…</div>';
+          loadTransit();
+        });
+      }
+    }
+
     async function loadTransit() {
       clearTimeout(transitTimer);
-      for (const b of document.querySelectorAll(".seg button")) b.setAttribute("aria-pressed", String(b.dataset.route === route));
+      renderPicker();
       try {
-        const r = TRANSIT.routes[route];
-        const ids = [r.from, r.via, r.to].map((k) => TRANSIT.stations[k]);
+        const key = `${tFrom}-${tTo}`;
+        const legs = legsOf(key);
+        const ids = [...new Set(legs.flatMap((l) => [stationOf(l.from), stationOf(l.to)]))];
+        const lines = [...new Set(legs.flatMap((l) => l.lines))].sort();
         const [deps, msgs] = await Promise.all([
           mvgCall({ action: "departures", stations: ids }),
-          mvgCall({ action: "messages", lines: TRANSIT.lines }).catch(() => null),
+          mvgCall({ action: "messages", lines: TRANSIT.watchLines }).catch(() => null),
         ]);
         const now = Date.now();
-        renderConnections(findConnections(r, deps, now), now);
-        if (msgs) renderStatus(msgs);
+        renderConnections(findConnections(key, deps, now), now);
+        if (msgs) renderStatus(msgs, lines);
       } catch (err) {
         $("conns").innerHTML = `<div class="empty">Ulaşım verisi alınamadı.<br><small>${esc(err.message || err)}</small></div>`;
       }
       // Sekme açıkken 30 saniyede bir yenile
       transitTimer = setTimeout(() => { if (currentTab === "ulasim" && !document.hidden) loadTransit(); }, 30 * 1000);
-    }
-    for (const b of document.querySelectorAll(".seg button")) {
-      b.addEventListener("click", () => { route = b.dataset.route; $("conns").innerHTML = '<div class="empty">Yükleniyor…</div>'; loadTransit(); });
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "ulasim") loadTransit(); });
 
