@@ -129,8 +129,12 @@
     .wx-now .icon { font-size: 52px; line-height: 1; }
     .wx-now .desc { font-size: 17px; font-weight: 600; margin-top: 6px; }
     .wx-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
-    .wx-tips { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 15px; }
-    .wx-tips p { margin: 2px 0; }
+    .wx-brief { background: var(--accent-soft); border-color: transparent; margin-bottom: 14px; padding-bottom: 16px; }
+    .wx-brief h2 { font-size: 18px; margin: 0 0 8px; letter-spacing: -0.01em; }
+    .wx-brief p { margin: 0 0 12px; }
+    .wx-brief .prep-title { font-size: 14px; font-weight: 650; color: var(--muted); margin: 0 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .wx-brief ul { list-style: none; padding: 0; margin: 0; }
+    .wx-brief li { margin: 6px 0; }
     .wx-h { font-size: 15px; font-weight: 650; margin: 22px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
     .wx-hours { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px 4px; }
     .wx-hours::-webkit-scrollbar { display: none; }
@@ -215,6 +219,7 @@
 
       <!-- Sekme: Hava durumu -->
       <div id="tab-hava" role="tabpanel" hidden>
+        <article class="card wx-brief" id="wxBrief" hidden></article>
         <article class="card" id="wx">
           <div class="empty">Yükleniyor…</div>
         </article>
@@ -461,8 +466,8 @@
       const params = new URLSearchParams({
         latitude: "48.137", longitude: "11.575", timezone: "Europe/Berlin", forecast_days: "7",
         current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day",
-        hourly: "temperature_2m,precipitation_probability,weather_code,is_day",
-        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max",
+        hourly: "temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day",
+        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max,uv_index_max",
       });
       try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
@@ -472,6 +477,72 @@
       } catch (err) {
         $("wx").innerHTML = '<div class="empty">Hava durumu alınamadı.<br><small>İnternet bağlantını kontrol edip sekmeye tekrar dokun.</small></div>';
       }
+    }
+
+    // "Bugün/Yarın" kutusu: günün özeti + neye göre hazırlanmalı (kurallara dayalı, anında)
+    function buildBrief(w) {
+      const c = w.current, d = w.daily, h = w.hourly;
+      const nowHr = +c.time.slice(11, 13);
+      const di = nowHr >= 20 && d.time.length > 1 ? 1 : 0; // akşam 20'den sonra yarını göster
+      const day = d.time[di];
+      const lc = (x) => x.toLocaleLowerCase("tr-TR");
+      const pad = (n) => String(n).padStart(2, "0");
+      const idx = (from, to) => h.time.map((t, i) => [t, i]).filter(([t]) => t.slice(0, 10) === day && +t.slice(11, 13) >= from && +t.slice(11, 13) <= to).map(([, i]) => i);
+      const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+
+      const tmin = r0(d.temperature_2m_min[di]), tmax = r0(d.temperature_2m_max[di]);
+      const [desc, emo] = wmo(d.weather_code[di]);
+
+      // Sabah / öğleden sonra / akşam
+      const parts = [["Sabah", 7, 11], ["öğleden sonra", 12, 16], ["akşam", 17, 21]].map(([name, a, b]) => {
+        const ii = idx(a, b);
+        if (!ii.length) return null;
+        const code = Math.max(...ii.map((i) => h.weather_code[i]));
+        return `${name} ${wmo(code)[1]} ${lc(wmo(code)[0])} (${r0(avg(ii.map((i) => h.temperature_2m[i])))}°)`;
+      }).filter(Boolean);
+
+      // Yağış penceresi (08–22)
+      const dayIdx = idx(8, 22);
+      const rainy = dayIdx.filter((i) => (h.precipitation_probability[i] ?? 0) >= 50).map((i) => +h.time[i].slice(11, 13));
+      const codes = new Set([d.weather_code[di], ...dayIdx.map((i) => h.weather_code[i])]);
+      const snow = SNOW.some((x) => codes.has(x)), storm = STORM.some((x) => codes.has(x));
+      let rainText = "Yağış beklenmiyor.";
+      if (rainy.length) {
+        const span = rainy[rainy.length - 1] + 1 - rainy[0];
+        const kind = snow ? "Kar/yağış" : "Yağış";
+        rainText = span >= 12 ? `${kind} gün boyu muhtemel.` : `${kind} ${pad(rainy[0])}:00–${pad(rainy[rainy.length - 1] + 1)}:00 arası bekleniyor.`;
+      }
+      const sunset = d.sunset[di].slice(11, 16);
+
+      const lead = di === 0 ? "Bugün" : "Yarın";
+      const text = `${lead} Münih'te hava ${lc(desc)}, sıcaklık ${tmin}° ile ${tmax}° arasında. ` +
+        (parts.length ? parts.join(", ").replace(/^./, (m) => m.toUpperCase()) + ". " : "") +
+        `${rainText} Gün batımı ${sunset}.`;
+
+      // Hazırlık önerileri
+      const feels = idx(7, 21).map((i) => h.apparent_temperature?.[i] ?? h.temperature_2m[i]);
+      const fmin = feels.length ? Math.min(...feels) : tmin;
+      const prep = [];
+      if (fmin <= 0) prep.push(`🧣 Kalın mont, bere ve eldiven (hissedilen en düşük ${r0(fmin)}°).`);
+      else if (fmin <= 8) prep.push(`🧥 Mont giy (hissedilen en düşük ${r0(fmin)}°).`);
+      else if (fmin <= 14) prep.push("🧥 Ceket ya da kalın bir sweatshirt yeterli.");
+      else if (fmin <= 20) prep.push("👕 Hafif bir ceket al, gerisi rahat.");
+      else prep.push("😎 Tişört havası.");
+      if (tmax - tmin >= 8) prep.push("🔄 Gün içinde sıcaklık epey değişiyor, kat kat giyin.");
+      const windy = (d.wind_speed_10m_max[di] ?? 0) >= 40;
+      if (rainy.length && !snow) prep.push(windy ? "🧥 Yağmur ve kuvvetli rüzgar var; şemsiye yerine kapüşonlu/su geçirmez mont daha iyi." : "☂️ Şemsiyeni unutma.");
+      else if (windy) prep.push("💨 Kuvvetli rüzgar bekleniyor.");
+      if (snow) prep.push("🥾 Kar var: kaymayan, su geçirmez ayakkabı giy.");
+      else if (tmin <= 0) prep.push("🧊 Sabah ve akşam buzlanma olabilir, bisiklette dikkat.");
+      if (storm) prep.push("⛈️ Gök gürültülü fırtına var, dışarıda uzun kalma.");
+      if ((d.uv_index_max?.[di] ?? 0) >= 5) prep.push("🧴 UV yüksek: güneş kremi ve gözlük.");
+      if (tmax >= 28) prep.push("💧 Sıcak; yanına su al.");
+      if (sunset <= "17:30") prep.push(`🚲 Erken kararıyor (gün batımı ${sunset}); bisikletle döneceksen ışıklarını kontrol et.`);
+
+      return `<h2>${di === 0 ? emo + " Bugün" : "🌙 Yarın"}</h2>
+        <p>${text}</p>
+        <div class="prep-title">Hazırlık</div>
+        <ul>${prep.map((x) => `<li>${x}</li>`).join("")}</ul>`;
     }
 
     function renderWeather(w) {
@@ -486,27 +557,8 @@
       const hours = [];
       for (let i = start; i < Math.min(start + 24, h.time.length); i++) hours.push(i);
 
-      // Bugünün (08–22) yağış penceresi ve uyarılar
-      const rainy = [], codes = new Set([d.weather_code[0]]);
-      h.time.forEach((t, i) => {
-        if (t.slice(0, 10) !== today) return;
-        const hr = +t.slice(11, 13);
-        if (hr < 8 || hr > 22) return;
-        codes.add(h.weather_code[i]);
-        if ((h.precipitation_probability[i] ?? 0) >= 50) rainy.push(hr);
-      });
-      const tips = [];
-      if (rainy.length) {
-        const span = rainy[rainy.length - 1] + 1 - rainy[0];
-        const when = span >= 12 ? "Gün boyu" : `${String(rainy[0]).padStart(2, "0")}:00–${String(rainy[rainy.length - 1] + 1).padStart(2, "0")}:00 arası`;
-        tips.push(`🌧️ ${when} yağış muhtemel, ☂️ şemsiyeni al.`);
-      }
-      if (STORM.some((x) => codes.has(x))) tips.push("⛈️ Gök gürültülü fırtına bekleniyor.");
-      if (SNOW.some((x) => codes.has(x))) tips.push("❄️ Kar bekleniyor, kaygan yollara dikkat.");
-      if (tmin <= 0) tips.push("🧊 Sabah/akşam buzlanma olabilir.");
-      if (tmax <= 5) tips.push("🧥 Soğuk, kalın giyin.");
-      if ((d.wind_speed_10m_max[0] ?? 0) >= 40) tips.push("💨 Kuvvetli rüzgar.");
-      if (tmax >= 28) tips.push("🥵 Sıcak, bol su iç.");
+      $("wxBrief").innerHTML = buildBrief(w);
+      $("wxBrief").hidden = false;
 
       const [desc] = wmo(c.weather_code);
       const hm = (iso) => iso.slice(11, 16);
@@ -521,7 +573,6 @@
           </div>
           <div class="icon">${icon(c.weather_code, c.is_day)}</div>
         </div>`;
-      if (tips.length) html += `<div class="wx-tips">${tips.map((t) => `<p>${t}</p>`).join("")}</div>`;
 
       html += `<div class="wx-h">Saatlik</div><div class="wx-hours">` + hours.map((i, k) => {
         const p = h.precipitation_probability[i] ?? 0;
