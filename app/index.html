@@ -114,11 +114,11 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
-      font: inherit; font-size: 15px; font-weight: 600; padding: 10px 8px; border: 0; border-radius: 10px;
+      font: inherit; font-size: 14px; font-weight: 600; padding: 10px 2px; border: 0; border-radius: 10px; white-space: nowrap;
       background: transparent; color: var(--muted); cursor: pointer;
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
@@ -191,6 +191,38 @@
     .wx-days .mm { font-variant-numeric: tabular-nums; }
     .wx-days .mm span { color: var(--muted); }
 
+    /* Gym */
+    .gym-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .gym-head h1 { margin-bottom: 2px; }
+    .btn-ghost {
+      font: inherit; font-size: 14px; font-weight: 600; padding: 7px 12px; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text); white-space: nowrap;
+    }
+    .btn-ghost.danger { color: var(--danger); }
+    .ex-list { list-style: none; padding: 0; margin: 14px 0 6px; counter-reset: ex; }
+    .ex-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .ex-list li::before {
+      counter-increment: ex; content: counter(ex);
+      width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; font-size: 13px; font-weight: 700;
+    }
+    .ex-name { font-weight: 650; }
+    .ex-meta { color: var(--muted); font-size: 15px; margin-top: 2px; }
+    .ex-note { font-size: 14px; margin-top: 4px; }
+    .gym-edit label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin: 12px 0 5px; }
+    .gym-edit input, .gym-edit select {
+      width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    }
+    .ex-edit { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 10px; display: grid; gap: 8px; }
+    .ex-edit .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .ex-edit .lbls span { font-size: 12px; color: var(--muted); font-weight: 600; padding-left: 4px; }
+    .ex-edit .tools { display: flex; gap: 6px; justify-content: flex-end; }
+    .ex-edit .tools button { padding: 5px 10px; font-size: 14px; }
+    .gym-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 6px; }
+    .gym-actions .btn { flex: 1; }
+    .day.add { border-style: dashed; color: var(--muted); }
+
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
       position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
@@ -234,9 +266,10 @@
       </div>
 
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 Mailler</button>
+        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 Mail</button>
         <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false">🌤️ Hava</button>
         <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false">🚇 Ulaşım</button>
+        <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false">🏋️ Gym</button>
       </div>
 
       <!-- Sekme: E-mailler -->
@@ -267,6 +300,12 @@
         <div class="picker" id="picker"></div>
         <article class="card" id="conns"><div class="empty">Yükleniyor…</div></article>
         <article class="card status" id="transitStatus" style="margin-top:14px" hidden></article>
+      </div>
+
+      <!-- Sekme: Gym -->
+      <div id="tab-gym" role="tabpanel" hidden>
+        <nav class="days" id="gymDays" aria-label="Program günleri"></nav>
+        <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
       </div>
 
       <footer id="footer"></footer>
@@ -320,6 +359,7 @@
       $("login").hidden = true;
       $("app").hidden = false;
       if (currentTab === "ulasim") loadTransit();
+      if (currentTab === "gym") loadGym();
       await loadDigests();
       await refreshNotice();
     }
@@ -484,11 +524,13 @@
       $("tab-mail").hidden = name !== "mail";
       $("tab-hava").hidden = name !== "hava";
       $("tab-ulasim").hidden = name !== "ulasim";
+      $("tab-gym").hidden = name !== "gym";
       currentTab = name;
       try { localStorage.setItem("asistan-tab", name); } catch (e) { /* önemli değil */ }
       // Hava durumu: ilk açılışta ve 15 dakikadan eskiyse yenile
       if (name === "hava" && Date.now() - wxLoadedAt > 15 * 60 * 1000) loadWeather();
       if (name === "ulasim") loadTransit();
+      if (name === "gym" && !gym.editing) loadGym();
     }
     for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -831,6 +873,198 @@
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "ulasim") loadTransit(); });
 
+    // ---------- Gym programı (Supabase'de saklanır) ----------
+    const WD = ["", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    const WDS = ["", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+    const gym = { days: [], exercises: [], selected: null, editing: false, draft: null, confirmDelete: false };
+    const todayWd = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
+    const sortDays = (a, b) => (a.weekday ?? 99) - (b.weekday ?? 99) || a.position - b.position || a.id - b.id;
+
+    async function loadGym() {
+      const [d, e] = await Promise.all([
+        sb.from("gym_days").select("*"),
+        sb.from("gym_exercises").select("*").order("position").order("id"),
+      ]);
+      if (d.error || e.error) {
+        const msg = (d.error || e.error).message || "";
+        $("gymDays").innerHTML = "";
+        $("gymCard").innerHTML = `<div class="empty">Gym programı yüklenemedi.<br><small>${esc(msg)}</small></div>`;
+        return;
+      }
+      gym.days = d.data.sort(sortDays);
+      gym.exercises = e.data;
+      if (!gym.days.some((x) => x.id === gym.selected)) {
+        gym.selected = (gym.days.find((x) => x.weekday === todayWd()) || gym.days[0] || {}).id ?? null;
+      }
+      renderGym();
+    }
+
+    function renderGym() {
+      const nav = $("gymDays");
+      nav.innerHTML = "";
+      for (const d of gym.days) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "day";
+        b.textContent = (d.weekday ? WDS[d.weekday] + " · " : "") + d.name;
+        b.setAttribute("aria-pressed", String(!gym.editing && d.id === gym.selected));
+        b.disabled = gym.editing;
+        b.addEventListener("click", () => { gym.selected = d.id; renderGym(); });
+        nav.appendChild(b);
+      }
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "day add";
+      add.textContent = "+ Gün ekle";
+      add.disabled = gym.editing;
+      add.addEventListener("click", () => startEdit(null));
+      nav.appendChild(add);
+
+      if (gym.editing) return renderGymEdit();
+      const day = gym.days.find((x) => x.id === gym.selected);
+      if (!day) {
+        $("gymCard").innerHTML = '<div class="empty">Henüz program yok.<br>“+ Gün ekle” ile ilk gününü oluştur.</div>';
+        return;
+      }
+      const exs = gym.exercises.filter((x) => x.day_id === day.id);
+      const meta = (x) => [x.sets ? `${x.sets} set` : "", x.reps ? (/^\d+(\s*[-–]\s*\d+)?$/.test(x.reps) ? `${x.reps} tekrar` : x.reps) : "", x.weight || ""].filter(Boolean).join(" · ");
+      $("gymCard").innerHTML = `
+        <div class="gym-head">
+          <div>
+            <div class="meta">${day.weekday ? WD[day.weekday] + (day.weekday === todayWd() ? " · bugün" : "") : "Haftanın gününe atanmamış"} · ${exs.length} egzersiz</div>
+            <h1>${esc(day.name)}</h1>
+          </div>
+          <button class="btn-ghost" type="button" id="gymEditBtn">Düzenle</button>
+        </div>
+        ${exs.length ? `<ol class="ex-list">${exs.map((x) => `<li><div>
+            <div class="ex-name">${esc(x.name)}</div>
+            ${meta(x) ? `<div class="ex-meta">${esc(meta(x))}</div>` : ""}
+            ${x.note ? `<div class="ex-note">📝 ${esc(x.note)}</div>` : ""}
+          </div></li>`).join("")}</ol>`
+        : '<div class="empty" style="padding:28px 8px">Bu gün için egzersiz yok.<br>Dinlenme günü mü? 🙂</div>'}`;
+      $("gymEditBtn").addEventListener("click", () => startEdit(day.id));
+    }
+
+    function startEdit(dayId) {
+      const day = gym.days.find((x) => x.id === dayId);
+      gym.draft = day
+        ? { id: day.id, name: day.name, weekday: day.weekday, exercises: gym.exercises.filter((x) => x.day_id === day.id).map((x) => ({ ...x })) }
+        : { id: null, name: "", weekday: null, exercises: [{ name: "", sets: null, reps: "", weight: "", note: "" }] };
+      gym.editing = true;
+      gym.confirmDelete = false;
+      renderGym();
+    }
+
+    function renderGymEdit() {
+      const d = gym.draft;
+      const opt = (v, label) => `<option value="${v}" ${String(d.weekday ?? "") === String(v) ? "selected" : ""}>${label}</option>`;
+      $("gymCard").innerHTML = `
+        <div class="gym-edit">
+          <div class="meta">${d.id ? "Günü düzenle" : "Yeni gün"}</div>
+          <label for="gName">Gün adı</label>
+          <input id="gName" data-f="name" placeholder="ör. Push, Bacak, Üst vücut" value="${esc(d.name)}">
+          <label for="gWd">Haftanın günü</label>
+          <select id="gWd" data-f="weekday">${opt("", "— Atanmamış —")}${WD.slice(1).map((w, i) => opt(i + 1, w)).join("")}</select>
+          <label>Egzersizler</label>
+          ${d.exercises.map((x, i) => `<div class="ex-edit">
+              <input data-i="${i}" data-x="name" placeholder="Egzersiz (ör. Bench Press)" value="${esc(x.name)}">
+              <div class="row3 lbls"><span>Set</span><span>Tekrar</span><span>Ağırlık</span></div>
+              <div class="row3" style="margin-top:-6px">
+                <input data-i="${i}" data-x="sets" inputmode="numeric" placeholder="Set" value="${esc(x.sets ?? "")}">
+                <input data-i="${i}" data-x="reps" placeholder="Tekrar" value="${esc(x.reps)}">
+                <input data-i="${i}" data-x="weight" placeholder="Ağırlık" value="${esc(x.weight)}">
+              </div>
+              <input data-i="${i}" data-x="note" placeholder="Not (opsiyonel)" value="${esc(x.note)}">
+              <div class="tools">
+                <button class="btn-ghost" type="button" data-move="${i}" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="Yukarı">↑</button>
+                <button class="btn-ghost" type="button" data-move="${i}" data-dir="1" ${i === d.exercises.length - 1 ? "disabled" : ""} aria-label="Aşağı">↓</button>
+                <button class="btn-ghost danger" type="button" data-del="${i}">Sil</button>
+              </div>
+            </div>`).join("")}
+          <button class="btn-ghost" type="button" id="gAddEx" style="width:100%;margin-top:10px">+ Egzersiz ekle</button>
+          <div class="gym-actions">
+            <button class="btn" type="button" id="gSave">Kaydet</button>
+            <button class="btn-ghost" type="button" id="gCancel">Vazgeç</button>
+          </div>
+          ${d.id ? `<button class="btn-ghost danger" type="button" id="gDelDay" style="width:100%">${gym.confirmDelete ? "Emin misin? Silmek için tekrar dokun" : "Bu günü sil"}</button>` : ""}
+          <p class="error" id="gErr"></p>
+        </div>`;
+
+      const card = $("gymCard");
+      card.querySelectorAll("[data-f]").forEach((el) => el.addEventListener("input", () => {
+        d[el.dataset.f] = el.dataset.f === "weekday" ? (el.value ? +el.value : null) : el.value;
+      }));
+      card.querySelectorAll("[data-x]").forEach((el) => el.addEventListener("input", () => {
+        const ex = d.exercises[+el.dataset.i];
+        ex[el.dataset.x] = el.dataset.x === "sets" ? (el.value.trim() === "" ? null : parseInt(el.value, 10) || null) : el.value;
+      }));
+      card.querySelectorAll("[data-move]").forEach((el) => el.addEventListener("click", () => {
+        const i = +el.dataset.move, j = i + +el.dataset.dir;
+        [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]];
+        renderGymEdit();
+      }));
+      card.querySelectorAll("[data-del]").forEach((el) => el.addEventListener("click", () => {
+        d.exercises.splice(+el.dataset.del, 1);
+        renderGymEdit();
+      }));
+      $("gAddEx").addEventListener("click", () => {
+        d.exercises.push({ name: "", sets: null, reps: "", weight: "", note: "" });
+        renderGymEdit();
+        const inputs = card.querySelectorAll('[data-x="name"]');
+        inputs[inputs.length - 1]?.focus();
+      });
+      $("gCancel").addEventListener("click", () => { gym.editing = false; gym.draft = null; renderGym(); });
+      $("gSave").addEventListener("click", saveGymDay);
+      if (d.id) $("gDelDay").addEventListener("click", async () => {
+        if (!gym.confirmDelete) { gym.confirmDelete = true; renderGymEdit(); return; }
+        const { error } = await sb.from("gym_days").delete().eq("id", d.id);
+        if (error) { $("gErr").textContent = "Silinemedi: " + error.message; return; }
+        gym.editing = false; gym.draft = null; gym.selected = null;
+        await loadGym();
+      });
+    }
+
+    async function saveGymDay() {
+      const d = gym.draft;
+      const btn = $("gSave");
+      d.name = d.name.trim();
+      if (!d.name) { $("gErr").textContent = "Gün adı boş olamaz."; return; }
+      btn.disabled = true;
+      try {
+        let dayId = d.id;
+        if (dayId) {
+          const { error } = await sb.from("gym_days").update({ name: d.name, weekday: d.weekday }).eq("id", dayId);
+          if (error) throw error;
+        } else {
+          const { data, error } = await sb.from("gym_days")
+            .insert({ name: d.name, weekday: d.weekday, position: gym.days.length }).select("id").single();
+          if (error) throw error;
+          dayId = data.id;
+        }
+        const rows = d.exercises
+          .map((x) => ({ ...x, name: (x.name || "").trim() }))
+          .filter((x) => x.name)
+          .map((x, i) => ({
+            ...(x.id ? { id: x.id } : {}), day_id: dayId, position: i, name: x.name,
+            sets: x.sets ?? null, reps: (x.reps || "").trim() || null, weight: (x.weight || "").trim() || null, note: (x.note || "").trim() || null,
+          }));
+        const keep = rows.filter((r) => r.id).map((r) => r.id);
+        const removed = gym.exercises.filter((x) => x.day_id === dayId && !keep.includes(x.id)).map((x) => x.id);
+        if (removed.length) {
+          const { error } = await sb.from("gym_exercises").delete().in("id", removed);
+          if (error) throw error;
+        }
+        const existing = rows.filter((r) => r.id), fresh = rows.filter((r) => !r.id);
+        if (existing.length) { const { error } = await sb.from("gym_exercises").upsert(existing); if (error) throw error; }
+        if (fresh.length) { const { error } = await sb.from("gym_exercises").insert(fresh); if (error) throw error; }
+        gym.editing = false; gym.draft = null; gym.selected = dayId;
+        await loadGym();
+      } catch (err) {
+        $("gErr").textContent = "Kaydedilemedi: " + (err.message || err);
+        btn.disabled = false;
+      }
+    }
+
     // ---------- Gmail'i aç ----------
     // iPhone'da Gmail uygulamasını açar; uygulama yüklü değilse web'deki Gmail'e geçer.
     // Diğer cihazlarda mail.google.com açılır (Android bunu Gmail uygulamasında açar).
@@ -852,9 +1086,10 @@
     let startTab = "mail";
     try { startTab = localStorage.getItem("asistan-tab") || "mail"; } catch (e) { /* önemli değil */ }
     const qs = new URLSearchParams(location.search);
-    if (["hava", "ulasim"].includes(qs.get("tab"))) startTab = qs.get("tab");
+    const TABS = ["hava", "ulasim", "gym"];
+    if (TABS.includes(qs.get("tab"))) startTab = qs.get("tab");
     if (qs.get("d")) startTab = "mail";
-    showTab(["hava", "ulasim"].includes(startTab) ? startTab : "mail");
+    showTab(TABS.includes(startTab) ? startTab : "mail");
 
     sb.auth.getSession().then(({ data }) => (data.session ? showApp() : showLogin()));
   })();
