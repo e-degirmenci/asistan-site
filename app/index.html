@@ -931,8 +931,9 @@
       $("gymCard").innerHTML = `
         <div class="gym-head">
           <div>
-            <div class="meta">${day.weekday ? WD[day.weekday] + (day.weekday === todayWd() ? " · bugün" : "") : "Haftanın gününe atanmamış"} · ${exs.length} egzersiz</div>
+            <div class="meta">${day.weekday ? WD[day.weekday] + (day.weekday === todayWd() ? " · bugün" : "") + " · " : ""}${exs.length} egzersiz</div>
             <h1>${esc(day.name)}</h1>
+            ${day.description ? `<div class="wx-sub" style="margin-top:0">${esc(day.description)}</div>` : ""}
           </div>
           <button class="btn-ghost" type="button" id="gymEditBtn">Düzenle</button>
         </div>
@@ -948,8 +949,8 @@
     function startEdit(dayId) {
       const day = gym.days.find((x) => x.id === dayId);
       gym.draft = day
-        ? { id: day.id, name: day.name, weekday: day.weekday, exercises: gym.exercises.filter((x) => x.day_id === day.id).map((x) => ({ ...x })) }
-        : { id: null, name: "", weekday: null, exercises: [{ name: "", sets: null, reps: "", weight: "", note: "" }] };
+        ? { id: day.id, name: day.name, description: day.description || "", weekday: day.weekday, exercises: gym.exercises.filter((x) => x.day_id === day.id).map((x) => ({ ...x })) }
+        : { id: null, name: "", description: "", weekday: null, exercises: [{ name: "", sets: null, reps: "", weight: "", note: "" }] };
       gym.editing = true;
       gym.confirmDelete = false;
       renderGym();
@@ -963,6 +964,8 @@
           <div class="meta">${d.id ? "Günü düzenle" : "Yeni gün"}</div>
           <label for="gName">Gün adı</label>
           <input id="gName" data-f="name" placeholder="ör. Push, Bacak, Üst vücut" value="${esc(d.name)}">
+          <label for="gDesc">Açıklama (opsiyonel)</label>
+          <input id="gDesc" data-f="description" placeholder="ör. Göğüs, omuz ve triceps" value="${esc(d.description)}">
           <label for="gWd">Haftanın günü</label>
           <select id="gWd" data-f="weekday">${opt("", "— Atanmamış —")}${WD.slice(1).map((w, i) => opt(i + 1, w)).join("")}</select>
           <label>Egzersizler</label>
@@ -1033,11 +1036,11 @@
       try {
         let dayId = d.id;
         if (dayId) {
-          const { error } = await sb.from("gym_days").update({ name: d.name, weekday: d.weekday }).eq("id", dayId);
+          const { error } = await sb.from("gym_days").update({ name: d.name, description: d.description.trim() || null, weekday: d.weekday }).eq("id", dayId);
           if (error) throw error;
         } else {
           const { data, error } = await sb.from("gym_days")
-            .insert({ name: d.name, weekday: d.weekday, position: gym.days.length }).select("id").single();
+            .insert({ name: d.name, description: d.description.trim() || null, weekday: d.weekday, position: gym.days.length + 1 }).select("id").single();
           if (error) throw error;
           dayId = data.id;
         }
