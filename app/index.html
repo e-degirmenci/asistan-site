@@ -653,7 +653,7 @@
     const TRANSIT = {
       stations: { home: "de:09162:740", transfer: "de:09162:400", uni: "de:09162:70" },
       names: { home: "Milbertshofen", transfer: "Scheidplatz", uni: "Universität" },
-      walkMin: { home: 0, uni: 0 },      // evden/binadan durağa yürüme süresi (dakika)
+      walkMin: { home: 6, uni: 0 },      // evden Milbertshofen'e ~5-6 dk yürüme; üniversitede sadece metro saati
       transferToleranceMin: 1,           // Scheidplatz'ta U2 ve U3 birbirini bekliyor: 1 dk fark bile yetiyor
       lines: ["U2", "U3"],
       routes: {
@@ -725,10 +725,10 @@
           <div class="conn-top">
             <span class="times">${hhmm(depT(d1))} → ${estimated ? "~" : ""}${hhmm(arrC)}</span>
             <span class="dur">${Math.round((arrC - depT(d1)) / MIN)} dk</span>
-            <span class="in">${inMin <= 0 ? "şimdi" : inMin + " dk sonra"}</span>
+            <span class="in">${inMin < 0 ? (walk ? "yürüyerek yetişilmez" : "şimdi") : inMin === 0 ? (walk ? "hemen çık" : "şimdi") : (walk ? `${inMin} dk sonra çık` : `${inMin} dk sonra`)}</span>
           </div>
           <div class="legs">
-            ${walk ? `<div class="walk">🚶 ${hhmm(leave)}'de çık (${walk} dk yürüme)</div>` : ""}
+            ${walk ? `<div class="walk">🚶 Evden çıkış: ${hhmm(leave)} (${walk} dk yürüme)</div>` : ""}
             <div class="leg"><span class="line ${esc(d1.label)}">${esc(d1.label)}</span> ${hhmm(depT(d1))} ${N[r.from]} ${delayTag(d1)}</div>
             <div class="xfer">↓ ${N[r.via]} · ${xferText}</div>
             <div class="leg"><span class="line ${esc(d2.label)}">${esc(d2.label)}</span> ${hhmm(depT(d2))} → ${estimated ? "~" : ""}${hhmm(arrC)} ${N[r.to]} ${delayTag(d2)}</div>
