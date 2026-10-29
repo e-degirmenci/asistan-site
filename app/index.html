@@ -200,12 +200,7 @@
     }
     .btn-ghost.danger { color: var(--danger); }
     .ex-list { list-style: none; padding: 0; margin: 14px 0 6px; counter-reset: ex; }
-    .ex-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
-    .ex-list li::before {
-      counter-increment: ex; content: counter(ex);
-      width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
-      display: grid; place-items: center; font-size: 13px; font-weight: 700;
-    }
+    .ex-list li { border-top: 1px solid var(--line); }
     .ex-name { font-weight: 650; }
     .ex-meta { color: var(--muted); font-size: 15px; margin-top: 2px; }
     .ex-note { font-size: 14px; margin-top: 4px; }
@@ -226,22 +221,36 @@
     .gym-info b { color: var(--text); font-weight: 650; }
     .gym-status { font-size: 14px; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft); margin: 12px 0 0; }
     .gym-status.ok { background: rgba(47, 158, 68, .14); }
-    .ex-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .ex-target { color: var(--muted); font-size: 14px; white-space: nowrap; }
-    .sets { display: grid; gap: 6px; margin-top: 8px; }
-    .set { display: grid; grid-template-columns: 26px 1fr auto 1fr 44px; align-items: center; gap: 6px; }
-    .set .sn { color: var(--muted); font-size: 13px; font-weight: 700; text-align: center; }
+    .ex-head {
+      width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 0; border: 0; background: none;
+      font: inherit; color: var(--text); text-align: left; cursor: pointer;
+    }
+    .ex-head .badge {
+      flex: 0 0 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700;
+    }
+    .ex-head .ex-name { flex: 1; }
+    .ex-head .chev { color: var(--muted); font-size: 13px; }
+    .ex-prog { font-size: 13px; font-weight: 650; color: var(--accent); }
+    .ex-prog.ok { color: #2f9e44; }
+    .ex.complete .badge { background: #2f9e44; color: #fff; }
+    .ex.complete .ex-name { color: var(--muted); }
+    .ex-body { padding: 0 0 14px; }
+    .ex-target { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+    .sets { display: grid; gap: 8px; margin-top: 4px; }
+    .set { display: grid; grid-template-columns: 46px 72px 26px 64px 1fr 56px; align-items: center; gap: 6px; }
+    .set .sn { color: var(--muted); font-size: 13px; font-weight: 700; }
     .set input {
-      width: 100%; min-width: 0; font: inherit; font-size: 16px; text-align: center; padding: 8px 4px; border-radius: 9px;
+      width: 100%; min-width: 0; font: inherit; font-size: 17px; text-align: center; padding: 9px 4px; border-radius: 10px;
       border: 1px solid var(--line); background: var(--bg); color: var(--text); font-variant-numeric: tabular-nums;
     }
     .set .x { color: var(--muted); font-size: 13px; }
-    .set .cardio { grid-column: 2 / 5; color: var(--muted); font-size: 15px; }
+    .set .cardio { grid-column: 1 / 6; color: var(--muted); font-size: 15px; }
     .set .chk {
-      width: 44px; height: 38px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg);
-      color: #fff; font-size: 18px; font-weight: 700; cursor: pointer;
+      grid-column: 6; width: 56px; height: 44px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg);
+      color: var(--line); font-size: 20px; font-weight: 700; cursor: pointer;
     }
-    .set.done .chk { background: #2f9e44; border-color: #2f9e44; }
+    .set.done .chk { background: #2f9e44; border-color: #2f9e44; color: #fff; }
     .set.done input { border-color: rgba(47, 158, 68, .5); }
     .prev { display: block; border: 0; background: none; padding: 0; margin-top: 8px; font: inherit; font-size: 13px; color: var(--muted); text-align: left; cursor: pointer; }
     .hist { font-size: 13px; color: var(--muted); margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--line); display: grid; gap: 2px; }
@@ -902,7 +911,7 @@
     const WDS = ["", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
     const gym = {
       days: [], exercises: [], sessions: [], logs: [], tracking: true,
-      selected: null, editing: false, draft: null, confirmDelete: false, busy: false, openHistory: new Set(),
+      selected: null, editing: false, draft: null, confirmDelete: false, busy: false, openHistory: new Set(), openEx: null,
     };
     const todayWd = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
     const sortDays = (a, b) => (a.weekday ?? 99) - (b.weekday ?? 99) || a.position - b.position || a.id - b.id;
@@ -1020,31 +1029,44 @@
       if (session) status = `<div class="gym-status">⏱️ Antrenman sürüyor · başlangıç ${hhmm(new Date(session.started_at).getTime())} · ${sessionLogs.length}/${totalSets} set</div>`;
       else if (doneToday) status = `<div class="gym-status ok">✅ Bugün tamamlandı (${hhmm(new Date(doneToday.completed_at).getTime())}). Yeni bir sete dokunursan yeni antrenman başlar.</div>`;
 
-      const exHtml = exs.map((x) => {
-        const cardio = x.sets == null;
+      const doneCount = (x) => Array.from({ length: x.sets ?? 1 }, (_, i) => logOf(x, i + 1)).filter(Boolean).length;
+      const exHtml = exs.map((x, idx) => {
+        const cardio = x.sets == null, total = x.sets ?? 1, done = doneCount(x), complete = gym.tracking && done === total;
+        const isOpen = gym.openEx === x.id;
         const hist = gym.tracking ? historyFor(x.name, session?.id) : [];
         const prev = hist[0];
-        const rows = Array.from({ length: x.sets ?? 1 }, (_, i) => {
+        const rows = Array.from({ length: total }, (_, i) => {
           const n = i + 1, log = logOf(x, n), p = prev?.sets.find((s) => s.set_no === n) || prev?.sets[prev.sets.length - 1];
-          const phW = p?.weight_kg != null ? fmtKg(p.weight_kg) : "kg";
-          const phR = p?.reps ?? (firstNum(x.reps) || "tekrar");
-          return `<div class="set${log ? " done" : ""}" data-ex="${x.id}" data-set="${n}">
-            <span class="sn">${cardio ? "✓" : n}</span>
+          const phW = p?.weight_kg != null ? fmtKg(p.weight_kg) : "–";
+          const phR = p?.reps ?? (firstNum(x.reps) || "–");
+          return `<div class="set${log ? " done" : ""}${cardio ? " cardio-row" : ""}" data-ex="${x.id}" data-set="${n}">
+            <span class="sn">${cardio ? "" : `Set ${n}`}</span>
             ${cardio ? `<span class="cardio">${esc(x.reps || "Yapıldı")}</span>` : `
-              <input class="kg" inputmode="decimal" placeholder="${esc(phW)}" value="${log?.weight_kg != null ? fmtKg(log.weight_kg) : ""}" aria-label="Ağırlık (kg)">
-              <span class="x">kg ×</span>
-              <input class="rp" inputmode="numeric" placeholder="${esc(phR)}" value="${log?.reps ?? ""}" aria-label="Tekrar">`}
-            <button type="button" class="chk" aria-label="Set tamam">${log ? "✓" : ""}</button>
+              <input class="kg" inputmode="decimal" placeholder="${esc(phW)}" value="${log?.weight_kg != null ? fmtKg(log.weight_kg) : ""}" aria-label="Set ${n} ağırlık (kg)">
+              <span class="x">kg</span>
+              <input class="rp" inputmode="numeric" placeholder="${esc(phR)}" value="${log?.reps ?? ""}" aria-label="Set ${n} tekrar">
+              <span class="x">tekrar</span>`}
+            <button type="button" class="chk" aria-label="Set ${n} tamam" aria-pressed="${!!log}">✓</button>
           </div>`;
         }).join("");
-        const open = gym.openHistory.has(norm(x.name));
-        return `<li><div>
-          <div class="ex-top"><span class="ex-name">${esc(x.name)}</span><span class="ex-target">${esc(target(x))}</span></div>
-          ${x.note ? `<div class="ex-note">📝 ${esc(x.note)}</div>` : ""}
-          ${gym.tracking ? `<div class="sets">${rows}</div>` : ""}
-          ${prev ? `<button type="button" class="prev" data-hist="${esc(norm(x.name))}">Geçen (${dshort(prev.date)}): ${esc(setsText(prev.sets))} ${hist.length > 1 ? (open ? "▴" : "▾") : ""}</button>` : ""}
-          ${open && hist.length > 1 ? `<div class="hist">${hist.slice(1).map((h) => `<div>${dshort(h.date)}: ${esc(setsText(h.sets))}</div>`).join("")}</div>` : ""}
-        </div></li>`;
+        const histOpen = gym.openHistory.has(norm(x.name));
+        const badge = complete ? "✓" : String(idx + 1);
+        const progress = !gym.tracking ? "" : complete ? '<span class="ex-prog ok">Tamamlandı</span>' : done ? `<span class="ex-prog">${done}/${total}</span>` : "";
+        return `<li class="ex${complete ? " complete" : ""}${isOpen ? " open" : ""}">
+          <button type="button" class="ex-head" data-open="${x.id}" aria-expanded="${isOpen}">
+            <span class="badge">${badge}</span>
+            <span class="ex-name">${esc(x.name)}</span>
+            ${progress}
+            <span class="chev">${isOpen ? "▴" : "▾"}</span>
+          </button>
+          ${isOpen ? `<div class="ex-body">
+            <div class="ex-target">Hedef: ${esc(target(x)) || "–"}</div>
+            ${x.note ? `<div class="ex-note">📝 ${esc(x.note)}</div>` : ""}
+            ${gym.tracking ? `<div class="sets">${rows}</div>` : ""}
+            ${prev ? `<button type="button" class="prev" data-hist="${esc(norm(x.name))}">Geçen (${dshort(prev.date)}): ${esc(setsText(prev.sets))} ${hist.length > 1 ? (histOpen ? "▴" : "▾") : ""}</button>` : ""}
+            ${histOpen && hist.length > 1 ? `<div class="hist">${hist.slice(1).map((h) => `<div>${dshort(h.date)}: ${esc(setsText(h.sets))}</div>`).join("")}</div>` : ""}
+          </div>` : ""}
+        </li>`;
       }).join("");
 
       $("gymCard").innerHTML = `
@@ -1069,6 +1091,11 @@
       const card = $("gymCard");
       card.querySelectorAll(".set .chk").forEach((b) => b.addEventListener("click", () => toggleSet(day, b.closest(".set"))));
       card.querySelectorAll(".set input").forEach((inp) => inp.addEventListener("change", () => updateSetValues(inp.closest(".set"))));
+      card.querySelectorAll(".ex-head").forEach((b) => b.addEventListener("click", () => {
+        const id = +b.dataset.open;
+        gym.openEx = gym.openEx === id ? null : id;
+        renderGym();
+      }));
       card.querySelectorAll(".prev").forEach((b) => b.addEventListener("click", () => {
         const k = b.dataset.hist;
         gym.openHistory.has(k) ? gym.openHistory.delete(k) : gym.openHistory.add(k);
@@ -1112,6 +1139,14 @@
             .select("*").single();
           if (error) throw error;
           gym.logs = [data, ...gym.logs.filter((l) => l.id !== data.id)];
+          const doneSets = new Set(gym.logs.filter((l) => l.session_id === session.id).map((l) => norm(l.exercise_name) + "#" + l.set_no));
+          const finished = (x) => Array.from({ length: x.sets ?? 1 }, (_, i) => doneSets.has(norm(x.name) + "#" + (i + 1))).every(Boolean);
+          if (finished(ex)) {
+            const list = gym.exercises.filter((x) => x.day_id === day.id);
+            const i = list.findIndex((x) => x.id === ex.id);
+            const next = [...list.slice(i + 1), ...list.slice(0, i)].find((x) => !finished(x));
+            gym.openEx = next ? next.id : null;
+          }
         }
         renderGym();
       } catch (err) {
