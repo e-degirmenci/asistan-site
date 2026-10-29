@@ -114,7 +114,7 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
@@ -122,6 +122,39 @@
       background: transparent; color: var(--muted); cursor: pointer;
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
+
+    /* Ulaşım */
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .seg button {
+      font: inherit; font-size: 15px; font-weight: 600; padding: 11px 8px; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    }
+    .seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .conn { padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .conn:first-of-type { padding-top: 4px; }
+    .conn:last-of-type { border-bottom: 0; }
+    .conn-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .conn-top .times { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .conn-top .dur { color: var(--muted); font-size: 14px; }
+    .conn-top .in { margin-left: auto; font-size: 14px; font-weight: 650; color: var(--accent); }
+    .legs { margin-top: 8px; font-size: 15px; display: grid; gap: 5px; }
+    .leg { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .line {
+      display: inline-block; min-width: 30px; text-align: center; font-size: 13px; font-weight: 700;
+      padding: 2px 6px; border-radius: 6px; color: #fff;
+    }
+    .line.U2 { background: #c3022d; } .line.U3 { background: #ec6726; }
+    .xfer { color: var(--muted); font-size: 13px; padding-left: 2px; }
+    .ontime { color: #2f9e44; font-size: 13px; }
+    .late { color: var(--danger); font-size: 13px; font-weight: 650; }
+    .est { color: var(--muted); font-size: 12px; }
+    .walk { color: var(--muted); font-size: 13px; }
+    .status h3 { font-size: 15px; margin: 0 0 8px; }
+    .status .ok { color: #2f9e44; }
+    .status details { margin: 8px 0; }
+    .status summary { cursor: pointer; font-weight: 600; }
+    .status .msg-body { font-size: 14px; color: var(--muted); margin-top: 6px; }
+    .refresh { border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; padding: 0; }
 
     /* Hava durumu */
     .wx-now { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -198,8 +231,9 @@
       </div>
 
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 E-mailler</button>
-        <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false">🌤️ Hava durumu</button>
+        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 Mailler</button>
+        <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false">🌤️ Hava</button>
+        <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false">🚇 Ulaşım</button>
       </div>
 
       <!-- Sekme: E-mailler -->
@@ -223,6 +257,16 @@
         <article class="card" id="wx">
           <div class="empty">Yükleniyor…</div>
         </article>
+      </div>
+
+      <!-- Sekme: Ulaşım -->
+      <div id="tab-ulasim" role="tabpanel" hidden>
+        <div class="seg">
+          <button type="button" data-route="uni" aria-pressed="true">🏠 → 🎓 Üniye</button>
+          <button type="button" data-route="eve" aria-pressed="false">🎓 → 🏠 Eve</button>
+        </div>
+        <article class="card" id="conns"><div class="empty">Yükleniyor…</div></article>
+        <article class="card status" id="transitStatus" style="margin-top:14px" hidden></article>
       </div>
 
       <footer id="footer"></footer>
@@ -275,6 +319,7 @@
     async function showApp() {
       $("login").hidden = true;
       $("app").hidden = false;
+      if (currentTab === "ulasim") loadTransit();
       await loadDigests();
       await refreshNotice();
     }
@@ -433,13 +478,17 @@
 
     // ---------- Sekmeler ----------
     let wxLoadedAt = 0;
+    let currentTab = "mail";
     function showTab(name) {
       for (const b of document.querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.tab === name));
       $("tab-mail").hidden = name !== "mail";
       $("tab-hava").hidden = name !== "hava";
+      $("tab-ulasim").hidden = name !== "ulasim";
+      currentTab = name;
       try { localStorage.setItem("asistan-tab", name); } catch (e) { /* önemli değil */ }
       // Hava durumu: ilk açılışta ve 15 dakikadan eskiyse yenile
       if (name === "hava" && Date.now() - wxLoadedAt > 15 * 60 * 1000) loadWeather();
+      if (name === "ulasim") loadTransit();
     }
     for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -599,6 +648,153 @@
       $("wx").innerHTML = html;
     }
 
+    // ---------- Ulaşım (MVG, canlı) ----------
+    // Rota: Milbertshofen (U2) → Scheidplatz'ta aktarma → U3 → Universität (ve tersi)
+    const TRANSIT = {
+      stations: { home: "de:09162:740", transfer: "de:09162:400", uni: "de:09162:70" },
+      names: { home: "Milbertshofen", transfer: "Scheidplatz", uni: "Universität" },
+      walkMin: { home: 0, uni: 0 },      // evden/binadan durağa yürüme süresi (dakika)
+      transferToleranceMin: 1,           // Scheidplatz'ta U2 ve U3 birbirini bekliyor: 1 dk fark bile yetiyor
+      lines: ["U2", "U3"],
+      routes: {
+        uni: {
+          from: "home", via: "transfer", to: "uni",
+          leg1: { line: "U2", dir: "H", notEndingAt: [] },
+          leg2: { line: "U3", dir: "H", notEndingAt: ["Bonner Platz", "Münchner Freiheit"] },
+          fallbackMin: [2, 7],           // sefer eşleşmezse tahmini yolculuk süreleri
+        },
+        eve: {
+          from: "uni", via: "transfer", to: "home",
+          leg1: { line: "U3", dir: "R", notEndingAt: ["Giselastraße", "Münchner Freiheit", "Bonner Platz"] },
+          leg2: { line: "U2", dir: "R", notEndingAt: ["Scheidplatz"] },
+          fallbackMin: [7, 2],
+        },
+      },
+    };
+    let route = new Date().getHours() < 13 ? "uni" : "eve";
+    let transitTimer = null;
+    const MIN = 60 * 1000;
+    const depT = (d) => d.realtimeDepartureTime ?? d.plannedDepartureTime;
+    const dirOf = (d) => (d.lineId || "").split(":")[3] || "";
+    const hhmm = (ms) => new Date(ms).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
+    const esc = (x) => String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+    function findConnections(r, data, now) {
+      const S = TRANSIT.stations;
+      const A = data[S[r.from]] || [], B = data[S[r.via]] || [], C = data[S[r.to]] || [];
+      const fits = (d, leg) => d.label === leg.line && dirOf(d) === leg.dir && !leg.notEndingAt.includes(d.destination);
+      const sameTrip = (list, d) => list.find((x) => x.label === d.label && dirOf(x) === dirOf(d) && x.tripCode === d.tripCode && depT(x) >= depT(d));
+      const first = A.filter((d) => fits(d, r.leg1) && depT(d) >= now - 30 * 1000).sort((a, b) => depT(a) - depT(b));
+      const second = B.filter((d) => fits(d, r.leg2) && !d.cancelled).sort((a, b) => depT(a) - depT(b));
+      const byTrain = new Map();
+      for (const d1 of first) {
+        if (d1.cancelled) continue;
+        const atB = sameTrip(B, d1);
+        const arrB = atB ? depT(atB) : depT(d1) + r.fallbackMin[0] * MIN;
+        const d2 = second.find((x) => depT(x) >= arrB - TRANSIT.transferToleranceMin * MIN);
+        if (!d2) continue;
+        const atC = sameTrip(C, d2);
+        const arrC = atC ? depT(atC) : depT(d2) + r.fallbackMin[1] * MIN;
+        // Aynı aktarma trenine yetişen birden fazla tren varsa en geç çıkılanı göster
+        byTrain.set(d2.tripCode + "|" + depT(d2), { d1, d2, arrB, arrC, estimated: !atB || !atC });
+      }
+      const cancelled = first.filter((d) => d.cancelled).slice(0, 3);
+      return { list: [...byTrain.values()].sort((a, b) => depT(a.d1) - depT(b.d1)).slice(0, 4), cancelled };
+    }
+
+    function delayTag(d) {
+      if (d.cancelled) return '<span class="late">iptal</span>';
+      if (!d.realtime) return "";
+      const m = d.delayInMinutes || 0;
+      return m > 0 ? `<span class="late">+${m} dk</span>` : '<span class="ontime">zamanında</span>';
+    }
+
+    function renderConnections(res, now) {
+      const r = TRANSIT.routes[route], N = TRANSIT.names;
+      const walk = TRANSIT.walkMin[r.from] || 0;
+      if (!res.list.length) {
+        $("conns").innerHTML = '<div class="empty">Önümüzdeki dakikalarda uygun bağlantı bulunamadı.</div>';
+        return;
+      }
+      let html = res.list.map(({ d1, d2, arrB, arrC, estimated }) => {
+        const leave = depT(d1) - walk * MIN;
+        const inMin = Math.round((leave - now) / MIN);
+        const wait = Math.max(0, Math.round((depT(d2) - arrB) / MIN));
+        const xferText = wait <= 1 ? "hemen aktarma (trenler bekleşiyor)" : `${wait} dk bekleme`;
+        return `<div class="conn">
+          <div class="conn-top">
+            <span class="times">${hhmm(depT(d1))} → ${estimated ? "~" : ""}${hhmm(arrC)}</span>
+            <span class="dur">${Math.round((arrC - depT(d1)) / MIN)} dk</span>
+            <span class="in">${inMin <= 0 ? "şimdi" : inMin + " dk sonra"}</span>
+          </div>
+          <div class="legs">
+            ${walk ? `<div class="walk">🚶 ${hhmm(leave)}'de çık (${walk} dk yürüme)</div>` : ""}
+            <div class="leg"><span class="line ${esc(d1.label)}">${esc(d1.label)}</span> ${hhmm(depT(d1))} ${N[r.from]} ${delayTag(d1)}</div>
+            <div class="xfer">↓ ${N[r.via]} · ${xferText}</div>
+            <div class="leg"><span class="line ${esc(d2.label)}">${esc(d2.label)}</span> ${hhmm(depT(d2))} → ${estimated ? "~" : ""}${hhmm(arrC)} ${N[r.to]} ${delayTag(d2)}</div>
+          </div>
+        </div>`;
+      }).join("");
+      if (res.cancelled.length) {
+        html += `<p class="est" style="margin:10px 0 0">İptal edilen seferler: ${res.cancelled.map((d) => `${esc(d.label)} ${hhmm(d.plannedDepartureTime)}`).join(", ")}</p>`;
+      }
+      html += `<p class="est" style="margin:12px 0 4px">Güncellendi ${hhmm(now)} · <button class="refresh" type="button" id="transitRefresh">Yenile</button></p>`;
+      $("conns").innerHTML = html;
+      $("transitRefresh").addEventListener("click", loadTransit);
+    }
+
+    function renderStatus(messages) {
+      const box = $("transitStatus");
+      box.hidden = false;
+      const now = Date.now();
+      const active = (messages || []).filter((m) => {
+        const spans = m.incidentDurations?.length ? m.incidentDurations : [{ from: m.validFrom, to: m.validTo }];
+        return spans.some((s) => (s.from ?? 0) <= now + 24 * 60 * MIN && (s.to ?? 9e15) >= now);
+      });
+      const title = `<h3>🚇 ${TRANSIT.lines.join(" / ")} durumu</h3>`;
+      if (!active.length) { box.innerHTML = title + '<div class="ok">✅ Bilinen aksaklık yok.</div>'; return; }
+      box.innerHTML = title + active.map((m) => {
+        const lines = [...new Set((m.lines || []).map((l) => l.label).filter((l) => TRANSIT.lines.includes(l)))].join("/");
+        const icon = m.type === "INCIDENT" ? "⚠️" : "🚧";
+        const until = m.validTo ? ` · bitiş ${new Date(m.validTo).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}` : "";
+        const body = DOMPurify.sanitize(m.description || "", { ALLOWED_TAGS: ["br", "p", "ul", "li", "b", "strong", "em"] });
+        return `<details><summary>${icon} ${esc(lines)}: ${esc(m.title)}</summary><div class="msg-body">${body}<div class="est">${until.slice(3)}</div></div></details>`;
+      }).join("");
+    }
+
+    async function mvgCall(body) {
+      const { data, error } = await sb.functions.invoke("mvg", {
+        body,
+        headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY },
+      });
+      if (error) throw error;
+      return data;
+    }
+
+    async function loadTransit() {
+      clearTimeout(transitTimer);
+      for (const b of document.querySelectorAll(".seg button")) b.setAttribute("aria-pressed", String(b.dataset.route === route));
+      try {
+        const r = TRANSIT.routes[route];
+        const ids = [r.from, r.via, r.to].map((k) => TRANSIT.stations[k]);
+        const [deps, msgs] = await Promise.all([
+          mvgCall({ action: "departures", stations: ids }),
+          mvgCall({ action: "messages", lines: TRANSIT.lines }).catch(() => null),
+        ]);
+        const now = Date.now();
+        renderConnections(findConnections(r, deps, now), now);
+        if (msgs) renderStatus(msgs);
+      } catch (err) {
+        $("conns").innerHTML = `<div class="empty">Ulaşım verisi alınamadı.<br><small>${esc(err.message || err)}</small></div>`;
+      }
+      // Sekme açıkken 30 saniyede bir yenile
+      transitTimer = setTimeout(() => { if (currentTab === "ulasim" && !document.hidden) loadTransit(); }, 30 * 1000);
+    }
+    for (const b of document.querySelectorAll(".seg button")) {
+      b.addEventListener("click", () => { route = b.dataset.route; $("conns").innerHTML = '<div class="empty">Yükleniyor…</div>'; loadTransit(); });
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "ulasim") loadTransit(); });
+
     // ---------- Gmail'i aç ----------
     // iPhone'da Gmail uygulamasını açar; uygulama yüklü değilse web'deki Gmail'e geçer.
     // Diğer cihazlarda mail.google.com açılır (Android bunu Gmail uygulamasında açar).
@@ -620,9 +816,9 @@
     let startTab = "mail";
     try { startTab = localStorage.getItem("asistan-tab") || "mail"; } catch (e) { /* önemli değil */ }
     const qs = new URLSearchParams(location.search);
-    if (qs.get("tab") === "hava") startTab = "hava";
+    if (["hava", "ulasim"].includes(qs.get("tab"))) startTab = qs.get("tab");
     if (qs.get("d")) startTab = "mail";
-    showTab(startTab === "hava" ? "hava" : "mail");
+    showTab(["hava", "ulasim"].includes(startTab) ? startTab : "mail");
 
     sb.auth.getSession().then(({ data }) => (data.session ? showApp() : showLogin()));
   })();
