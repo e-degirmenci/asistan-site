@@ -114,14 +114,29 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
-      font: inherit; font-size: 14px; font-weight: 600; padding: 10px 2px; border: 0; border-radius: 10px; white-space: nowrap;
+      font: inherit; font-size: 12px; font-weight: 600; padding: 7px 0 6px; border: 0; border-radius: 10px; white-space: nowrap;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
       background: transparent; color: var(--muted); cursor: pointer;
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
+    .tab .ti { font-size: 19px; line-height: 1.1; }
+
+    /* Bugün */
+    .hello { margin: 2px 2px 14px; }
+    .hello h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+    .tcard { cursor: pointer; margin-bottom: 12px; padding: 14px 16px; }
+    .tcard:active { transform: scale(.99); }
+    .tc-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: .02em; margin-bottom: 6px; }
+    .tc-head .go { font-size: 18px; line-height: 1; }
+    .tc-big { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .tc-line { font-size: 15px; margin-top: 4px; }
+    .tc-line.muted { color: var(--muted); font-size: 14px; }
+    .tc-line.warn { color: var(--danger); font-size: 14px; }
+    .tc-list { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 15px; }
 
     /* Ulaşım */
     .picker { display: grid; gap: 8px; margin-bottom: 12px; }
@@ -298,14 +313,24 @@
       </div>
 
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="true">📬 Mail</button>
-        <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false">🌤️ Hava</button>
-        <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false">🚇 Ulaşım</button>
-        <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false">🏋️ Gym</button>
+        <button class="tab" role="tab" type="button" data-tab="bugun" aria-selected="true"><span class="ti">🏠</span>Bugün</button>
+        <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="false"><span class="ti">📬</span>Mail</button>
+        <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false"><span class="ti">🌤️</span>Hava</button>
+        <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false"><span class="ti">🚇</span>Ulaşım</button>
+        <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false"><span class="ti">🏋️</span>Gym</button>
+      </div>
+
+      <!-- Sekme: Bugün -->
+      <div id="tab-bugun" role="tabpanel">
+        <div class="hello"><h2 id="helloTitle"></h2><div id="helloDate" class="wx-sub"></div></div>
+        <article class="card tcard" id="tWx" data-goto="hava"><div class="tc-head"><span>🌤️ Hava</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tTransit" data-goto="ulasim"><div class="tc-head"><span>🚇 Ulaşım</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tGym" data-goto="gym"><div class="tc-head"><span>🏋️ Gym</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tMail" data-goto="mail"><div class="tc-head"><span>📬 Mail</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
       </div>
 
       <!-- Sekme: E-mailler -->
-      <div id="tab-mail" role="tabpanel">
+      <div id="tab-mail" role="tabpanel" hidden>
         <nav class="days" id="days" aria-label="Günler"></nav>
         <article class="card" id="card">
           <div class="empty">Yükleniyor…</div>
@@ -391,9 +416,12 @@
     async function showApp() {
       $("login").hidden = true;
       $("app").hidden = false;
+      loggedIn = true;
       if (currentTab === "ulasim") loadTransit();
       if (currentTab === "gym") loadGym();
+      if (currentTab === "hava") loadWeather();
       await loadDigests();
+      if (currentTab === "bugun") loadToday();
       await refreshNotice();
     }
 
@@ -416,6 +444,7 @@
 
     $("logout").addEventListener("click", async () => {
       await sb.auth.signOut();
+      loggedIn = false;
       showLogin();
     });
 
@@ -551,17 +580,20 @@
 
     // ---------- Sekmeler ----------
     let wxLoadedAt = 0;
-    let currentTab = "mail";
+    let currentTab = "bugun";
+    let loggedIn = false;
     function showTab(name) {
       for (const b of document.querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.tab === name));
+      $("tab-bugun").hidden = name !== "bugun";
       $("tab-mail").hidden = name !== "mail";
       $("tab-hava").hidden = name !== "hava";
       $("tab-ulasim").hidden = name !== "ulasim";
       $("tab-gym").hidden = name !== "gym";
       currentTab = name;
-      try { localStorage.setItem("asistan-tab", name); } catch (e) { /* önemli değil */ }
+      if (!loggedIn) return;   // girişten önce veri çekme
+      if (name === "bugun") loadToday();
       // Hava durumu: ilk açılışta ve 15 dakikadan eskiyse yenile
-      if (name === "hava" && Date.now() - wxLoadedAt > 15 * 60 * 1000) loadWeather();
+      if (name === "hava") loadWeather();
       if (name === "ulasim") loadTransit();
       if (name === "gym" && !gym.editing) loadGym();
     }
@@ -586,18 +618,24 @@
     const icon = (c, isDay) => (!isDay && (c === 0 || c === 1)) ? "🌙" : wmo(c)[1];
     const r0 = (x) => Math.round(x);
 
-    async function loadWeather() {
+    let wxData = null;
+    async function fetchWeather() {
+      if (wxData && Date.now() - wxLoadedAt < 10 * 60 * 1000) return wxData;
       const params = new URLSearchParams({
         latitude: "48.137", longitude: "11.575", timezone: "Europe/Berlin", forecast_days: "7",
         current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day",
         hourly: "temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day",
         daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max,uv_index_max",
       });
+      const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      wxData = await res.json();
+      wxLoadedAt = Date.now();
+      return wxData;
+    }
+    async function loadWeather() {
       try {
-        const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        renderWeather(await res.json());
-        wxLoadedAt = Date.now();
+        renderWeather(await fetchWeather());
       } catch (err) {
         $("wx").innerHTML = '<div class="empty">Hava durumu alınamadı.<br><small>İnternet bağlantını kontrol edip sekmeye tekrar dokun.</small></div>';
       }
@@ -883,21 +921,26 @@
       }
     }
 
+    async function fetchTransit(from, to) {
+      const key = `${from}-${to}`;
+      const legs = legsOf(key);
+      const ids = [...new Set(legs.flatMap((l) => [stationOf(l.from), stationOf(l.to)]))];
+      const lines = [...new Set(legs.flatMap((l) => l.lines))].sort();
+      const [deps, msgs] = await Promise.all([
+        mvgCall({ action: "departures", stations: ids }),
+        mvgCall({ action: "messages", lines: TRANSIT.watchLines }).catch(() => null),
+      ]);
+      const now = Date.now();
+      return { key, lines, msgs, now, res: findConnections(key, deps, now) };
+    }
+
     async function loadTransit() {
       clearTimeout(transitTimer);
       renderPicker();
       try {
-        const key = `${tFrom}-${tTo}`;
-        const legs = legsOf(key);
-        const ids = [...new Set(legs.flatMap((l) => [stationOf(l.from), stationOf(l.to)]))];
-        const lines = [...new Set(legs.flatMap((l) => l.lines))].sort();
-        const [deps, msgs] = await Promise.all([
-          mvgCall({ action: "departures", stations: ids }),
-          mvgCall({ action: "messages", lines: TRANSIT.watchLines }).catch(() => null),
-        ]);
-        const now = Date.now();
-        renderConnections(findConnections(key, deps, now), now);
-        if (msgs) renderStatus(msgs, lines);
+        const t = await fetchTransit(tFrom, tTo);
+        renderConnections(t.res, t.now);
+        if (t.msgs) renderStatus(t.msgs, t.lines);
       } catch (err) {
         $("conns").innerHTML = `<div class="empty">Ulaşım verisi alınamadı.<br><small>${esc(err.message || err)}</small></div>`;
       }
@@ -953,19 +996,14 @@
     }
     const setsText = (sets) => sets.map((l) => (l.weight_kg != null ? `${fmtKg(l.weight_kg)}×${l.reps ?? "?"}` : `${l.reps ?? "✓"}`)).join(" · ");
 
-    async function loadGym() {
+    async function fetchGym() {
       const [d, e, s, l] = await Promise.all([
         sb.from("gym_days").select("*"),
         sb.from("gym_exercises").select("*").order("position").order("id"),
         sb.from("gym_sessions").select("*").order("started_at", { ascending: false }).limit(300),
         sb.from("gym_set_logs").select("*").order("created_at", { ascending: false }).limit(5000),
       ]);
-      if (d.error || e.error) {
-        const msg = (d.error || e.error).message || "";
-        $("gymDays").innerHTML = "";
-        $("gymCard").innerHTML = `<div class="empty">Gym programı yüklenemedi.<br><small>${esc(msg)}</small></div>`;
-        return;
-      }
+      if (d.error || e.error) throw d.error || e.error;
       gym.days = d.data.sort(sortDays);
       gym.exercises = e.data;
       gym.tracking = !s.error && !l.error;   // takip tabloları kurulmadıysa sadece program gösterilir
@@ -975,7 +1013,15 @@
         const running = activeSession();
         gym.selected = running?.day_id ?? gym.days.find((x) => x.weekday === todayWd())?.id ?? nextDay()?.id ?? gym.days[0]?.id ?? null;
       }
-      renderGym();
+    }
+    async function loadGym() {
+      try {
+        await fetchGym();
+        renderGym();
+      } catch (err) {
+        $("gymDays").innerHTML = "";
+        $("gymCard").innerHTML = `<div class="empty">Gym programı yüklenemedi.<br><small>${esc(err.message || err)}</small></div>`;
+      }
     }
 
     function renderGymInfo() {
@@ -1314,6 +1360,121 @@
       }
     }
 
+    // ---------- Bugün ekranı ----------
+    let todayTimer = null;
+    function setCard(id, html) { $(id).querySelector(".tc-body").innerHTML = html; $(id).querySelector(".tc-body").classList.remove("est"); }
+
+    function todayWeather(w) {
+      const c = w.current, d = w.daily, h = w.hourly, today = d.time[0];
+      const rainy = [], feels = [];
+      h.time.forEach((t, i) => {
+        if (t.slice(0, 10) !== today) return;
+        const hr = +t.slice(11, 13);
+        if (hr >= 8 && hr <= 22 && (h.precipitation_probability[i] ?? 0) >= 50) rainy.push(hr);
+        if (hr >= 7 && hr <= 21) feels.push(h.apparent_temperature?.[i] ?? h.temperature_2m[i]);
+      });
+      const pad = (n) => String(n).padStart(2, "0");
+      const rain = rainy.length
+        ? `☂️ ${rainy[rainy.length - 1] + 1 - rainy[0] >= 12 ? "Gün boyu" : `${pad(rainy[0])}:00–${pad(rainy[rainy.length - 1] + 1)}:00 arası`} yağış, şemsiyeni al`
+        : "Yağış beklenmiyor";
+      const fmin = feels.length ? Math.min(...feels) : d.temperature_2m_min[0];
+      const wear = fmin <= 0 ? "🧣 Kalın mont, bere, eldiven" : fmin <= 8 ? "🧥 Mont giy" : fmin <= 14 ? "🧥 Ceket yeterli" : fmin <= 20 ? "👕 Hafif ceket" : "😎 Tişört havası";
+      setCard("tWx", `<div class="tc-big">${icon(c.weather_code, c.is_day)} ${r0(c.temperature_2m)}° · ${wmo(c.weather_code)[0]}</div>
+        <div class="tc-line muted">Bugün ${r0(d.temperature_2m_min[0])}° / ${r0(d.temperature_2m_max[0])}° · hissedilen ${r0(c.apparent_temperature)}°</div>
+        <div class="tc-line">${rain}</div>
+        <div class="tc-line">${wear}</div>`);
+    }
+
+    // Bağlama göre rota: antrenman sürüyorsa salondan eve, öğleden önce üniye, sonra eve
+    function todayRoute() {
+      if (gym.tracking && activeSession()) return ["gym", "home"];
+      return new Date().getHours() < 13 ? ["home", "uni"] : ["uni", "home"];
+    }
+    function todayTransit(t, from, to) {
+      const P = TRANSIT.places, list = t.res.list.slice(0, 2);
+      const head = `${P[from].icon} → ${P[to].icon} ${P[to].label}`;
+      if (!list.length) { setCard("tTransit", `<div class="tc-big">${head}</div><div class="tc-line muted">Yakında uygun bağlantı yok.</div>`); return; }
+      const walk = P[from].walk || 0;
+      const rows = list.map(({ steps, arr, est }) => {
+        const d1 = steps[0].d, leave = depT(d1) - walk * MIN, inMin = Math.round((leave - t.now) / MIN);
+        const when = inMin < 0 ? (walk ? "yürüyerek yetişilmez" : "şimdi") : inMin === 0 ? (walk ? "hemen çık" : "şimdi") : walk ? `${inMin} dk sonra çık` : `${inMin} dk sonra`;
+        const delay = steps.some((s) => (s.d.delayInMinutes || 0) > 0) ? ` <span class="late">+${Math.max(...steps.map((s) => s.d.delayInMinutes || 0))} dk</span>` : "";
+        return `<li>${steps.map((s) => `<span class="line ${esc(s.d.label)}">${esc(s.d.label)}</span>`).join(" ")} ${hhmm(depT(d1))} → ${est ? "~" : ""}${hhmm(arr)} · <b>${when}</b>${delay}</li>`;
+      }).join("");
+      const now = Date.now();
+      const issues = (t.msgs || []).filter((m) => (m.lines || []).some((l) => t.lines.includes(l.label)) &&
+        (m.incidentDurations?.length ? m.incidentDurations : [{ from: m.validFrom, to: m.validTo }]).some((x) => (x.from ?? 0) <= now && (x.to ?? 9e15) >= now));
+      setCard("tTransit", `<div class="tc-big">${head}</div><ul class="tc-list">${rows}</ul>
+        ${issues.length ? `<div class="tc-line warn">⚠️ ${esc(issues[0].title)}${issues.length > 1 ? ` (+${issues.length - 1})` : ""}</div>` : `<div class="tc-line muted">✅ ${t.lines.join("/")} normal</div>`}`);
+    }
+
+    function todayGym() {
+      if (!gym.days.length) { setCard("tGym", '<div class="tc-line muted">Henüz program yok.</div>'); return; }
+      const running = gym.tracking && activeSession();
+      if (running) {
+        const day = gym.days.find((d) => d.id === running.day_id);
+        const exs = gym.exercises.filter((x) => x.day_id === running.day_id);
+        const total = exs.reduce((a, x) => a + (x.sets ?? 1), 0);
+        const done = gym.logs.filter((l) => l.session_id === running.id).length;
+        setCard("tGym", `<div class="tc-big">⏱️ ${esc(day?.name || running.day_name)}</div><div class="tc-line">Antrenman sürüyor · ${done}/${total} set</div>`);
+        return;
+      }
+      const last = gym.tracking && lastCompleted();
+      const doneToday = last && Date.now() - new Date(last.completed_at) < H12 && daysAgo(last.completed_at) === "bugün";
+      if (doneToday) {
+        const n = gym.logs.filter((l) => l.session_id === last.id).length;
+        setCard("tGym", `<div class="tc-big">✅ ${esc(last.day_name)}</div><div class="tc-line">Bugün tamamlandı · ${n} set</div>
+          ${nextDay() ? `<div class="tc-line muted">Sıradaki: ${esc(nextDay().name)}</div>` : ""}`);
+        return;
+      }
+      const planned = gym.days.find((d) => d.weekday === todayWd()) || nextDay() || gym.days[0];
+      const count = gym.exercises.filter((x) => x.day_id === planned.id).length;
+      setCard("tGym", `<div class="tc-big">${esc(planned.name)}</div>
+        <div class="tc-line muted">${planned.description ? esc(planned.description) + " · " : ""}${count} hareket</div>
+        ${last ? `<div class="tc-line muted">Son antrenman: ${daysAgo(last.completed_at)} (${esc(last.day_name)})</div>` : ""}`);
+    }
+
+    function todayMail() {
+      const d = digests[0];
+      if (!d) { setCard("tMail", '<div class="tc-line muted">Henüz özet yok. İlk özet sabah 09:00\'da.</div>'); return; }
+      const strip = (t) => t.replace(/\*\*|__|`/g, "").replace(/^\s*-\s*/, "").trim();
+      const lines = d.summary_md.split("\n");
+      const head = strip(lines.find((l) => l.trim()) || "");
+      const actions = lines.filter((l) => /^\s*-\s*🔴/.test(l)).map((l) => strip(l).replace(/^🔴\s*/, ""));
+      const label = d.digest_date === todayStr() ? "Bugünün özeti" : `Son özet · ${dayLabel(d.digest_date)}`;
+      setCard("tMail", `<div class="tc-line muted">${label}</div>
+        <div class="tc-line">${esc(head)}</div>
+        ${actions.length
+          ? `<ul class="tc-list">${actions.slice(0, 3).map((a) => `<li>🔴 ${esc(a.length > 110 ? a.slice(0, 108) + "…" : a)}</li>`).join("")}</ul>${actions.length > 3 ? `<div class="tc-line muted">+${actions.length - 3} aksiyon daha</div>` : ""}`
+          : '<div class="tc-line muted">✅ Aksiyon gereken mail yok</div>'}`);
+    }
+
+    async function loadToday() {
+      clearTimeout(todayTimer);
+      const h = new Date().getHours();
+      $("helloTitle").textContent = (h < 5 ? "İyi geceler" : h < 12 ? "Günaydın" : h < 18 ? "İyi günler" : "İyi akşamlar") + ", Eren 👋";
+      $("helloDate").textContent = new Date().toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Berlin" });
+      todayMail();
+      const failed = (id, what) => setCard(id, `<div class="tc-line muted">${what} alınamadı. Dokunup sekmeyi aç.</div>`);
+      fetchWeather().then(todayWeather).catch(() => failed("tWx", "Hava durumu"));
+      fetchGym().then(todayGym).catch(() => failed("tGym", "Gym programı")).finally(() => {
+        const [from, to] = todayRoute();
+        fetchTransit(from, to).then((t) => todayTransit(t, from, to)).catch(() => failed("tTransit", "Ulaşım verisi"));
+      });
+      // Bugün ekranı açıkken her dakika yenile (kalkış saatleri için)
+      todayTimer = setTimeout(() => { if (currentTab === "bugun" && !document.hidden) loadToday(); }, 60 * 1000);
+    }
+
+    for (const card of document.querySelectorAll(".tcard")) {
+      card.addEventListener("click", () => {
+        if (card.id === "tTransit") { [tFrom, tTo] = todayRoute(); }
+        if (card.id === "tMail" && digests[0]) select(digests[0].digest_date);
+        showTab(card.dataset.goto);
+        window.scrollTo(0, 0);
+      });
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "bugun" && loggedIn) loadToday(); });
+
     // ---------- Gmail'i aç ----------
     // iPhone'da Gmail uygulamasını açar; uygulama yüklü değilse web'deki Gmail'e geçer.
     // Diğer cihazlarda mail.google.com açılır (Android bunu Gmail uygulamasında açar).
@@ -1331,14 +1492,12 @@
     });
 
     // ---------- Başlat ----------
-    // Bildirimden (?d=...) gelindiyse mailler, değilse son açık bırakılan sekme
-    let startTab = "mail";
-    try { startTab = localStorage.getItem("asistan-tab") || "mail"; } catch (e) { /* önemli değil */ }
+    // Uygulama "Bugün" ile açılır; bildirimden (?d=...) gelindiyse mailler
     const qs = new URLSearchParams(location.search);
-    const TABS = ["hava", "ulasim", "gym"];
-    if (TABS.includes(qs.get("tab"))) startTab = qs.get("tab");
+    const TABS = ["bugun", "mail", "hava", "ulasim", "gym"];
+    let startTab = TABS.includes(qs.get("tab")) ? qs.get("tab") : "bugun";
     if (qs.get("d")) startTab = "mail";
-    showTab(TABS.includes(startTab) ? startTab : "mail");
+    showTab(startTab);
 
     sb.auth.getSession().then(({ data }) => (data.session ? showApp() : showLogin()));
   })();
