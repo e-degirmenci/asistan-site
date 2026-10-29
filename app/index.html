@@ -222,6 +222,29 @@
     .gym-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 6px; }
     .gym-actions .btn { flex: 1; }
     .day.add { border-style: dashed; color: var(--muted); }
+    .gym-info { font-size: 14px; color: var(--muted); margin: -4px 2px 10px; line-height: 1.5; }
+    .gym-info b { color: var(--text); font-weight: 650; }
+    .gym-status { font-size: 14px; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft); margin: 12px 0 0; }
+    .gym-status.ok { background: rgba(47, 158, 68, .14); }
+    .ex-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .ex-target { color: var(--muted); font-size: 14px; white-space: nowrap; }
+    .sets { display: grid; gap: 6px; margin-top: 8px; }
+    .set { display: grid; grid-template-columns: 26px 1fr auto 1fr 44px; align-items: center; gap: 6px; }
+    .set .sn { color: var(--muted); font-size: 13px; font-weight: 700; text-align: center; }
+    .set input {
+      width: 100%; min-width: 0; font: inherit; font-size: 16px; text-align: center; padding: 8px 4px; border-radius: 9px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text); font-variant-numeric: tabular-nums;
+    }
+    .set .x { color: var(--muted); font-size: 13px; }
+    .set .cardio { grid-column: 2 / 5; color: var(--muted); font-size: 15px; }
+    .set .chk {
+      width: 44px; height: 38px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg);
+      color: #fff; font-size: 18px; font-weight: 700; cursor: pointer;
+    }
+    .set.done .chk { background: #2f9e44; border-color: #2f9e44; }
+    .set.done input { border-color: rgba(47, 158, 68, .5); }
+    .prev { display: block; border: 0; background: none; padding: 0; margin-top: 8px; font: inherit; font-size: 13px; color: var(--muted); text-align: left; cursor: pointer; }
+    .hist { font-size: 13px; color: var(--muted); margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--line); display: grid; gap: 2px; }
 
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
@@ -304,6 +327,7 @@
 
       <!-- Sekme: Gym -->
       <div id="tab-gym" role="tabpanel" hidden>
+        <div class="gym-info" id="gymInfo" hidden></div>
         <nav class="days" id="gymDays" aria-label="Program günleri"></nav>
         <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
       </div>
@@ -876,14 +900,56 @@
     // ---------- Gym programı (Supabase'de saklanır) ----------
     const WD = ["", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     const WDS = ["", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-    const gym = { days: [], exercises: [], selected: null, editing: false, draft: null, confirmDelete: false };
+    const gym = {
+      days: [], exercises: [], sessions: [], logs: [], tracking: true,
+      selected: null, editing: false, draft: null, confirmDelete: false, busy: false, openHistory: new Set(),
+    };
     const todayWd = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
     const sortDays = (a, b) => (a.weekday ?? 99) - (b.weekday ?? 99) || a.position - b.position || a.id - b.id;
+    const H12 = 12 * 60 * 60 * 1000;
+    const norm = (n) => (n || "").trim().toLocaleLowerCase("tr-TR");
+    const num = (v) => { const x = parseFloat(String(v ?? "").replace(",", ".")); return Number.isFinite(x) ? x : null; };
+    const fmtKg = (w) => (w == null ? "–" : String(+w).replace(".", ","));
+    const dshort = (iso) => new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short", timeZone: "Europe/Berlin" });
+    const daysAgo = (iso) => {
+      const day = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(t);
+      const n = Math.round((new Date(day(new Date())) - new Date(day(new Date(iso)))) / 86400000);
+      return n <= 0 ? "bugün" : n === 1 ? "dün" : `${n} gün önce`;
+    };
+
+    // Devam eden (12 saatten yeni, tamamlanmamış) antrenman
+    const activeSession = (dayId) => gym.sessions.find((s) => !s.completed_at && Date.now() - new Date(s.started_at) < H12 && (dayId == null || s.day_id === dayId));
+    const lastCompleted = () => gym.sessions.find((s) => s.completed_at);
+    const byPosition = () => [...gym.days].sort((a, b) => a.position - b.position || a.id - b.id);
+    function nextDay() {
+      const last = lastCompleted();
+      const order = byPosition();
+      if (!last || !order.length) return order[0] || null;
+      const i = order.findIndex((d) => d.id === last.day_id);
+      return i < 0 ? order[0] : order[(i + 1) % order.length];
+    }
+    // Bir egzersizin bu antrenman dışındaki geçmişi (en yeni önce), egzersiz adına göre
+    function historyFor(name, excludeSessionId, limit = 5) {
+      const key = norm(name);
+      const bySession = new Map();
+      for (const l of gym.logs) {
+        if (norm(l.exercise_name) !== key || l.session_id === excludeSessionId) continue;
+        if (!bySession.has(l.session_id)) bySession.set(l.session_id, []);
+        bySession.get(l.session_id).push(l);
+      }
+      return gym.sessions
+        .filter((s) => bySession.has(s.id))
+        .slice(0, limit)
+        .map((s) => ({ date: s.completed_at || s.started_at, sets: bySession.get(s.id).sort((a, b) => a.set_no - b.set_no) }));
+    }
+    const setsText = (sets) => sets.map((l) => (l.weight_kg != null ? `${fmtKg(l.weight_kg)}×${l.reps ?? "?"}` : `${l.reps ?? "✓"}`)).join(" · ");
 
     async function loadGym() {
-      const [d, e] = await Promise.all([
+      const [d, e, s, l] = await Promise.all([
         sb.from("gym_days").select("*"),
         sb.from("gym_exercises").select("*").order("position").order("id"),
+        sb.from("gym_sessions").select("*").order("started_at", { ascending: false }).limit(300),
+        sb.from("gym_set_logs").select("*").order("created_at", { ascending: false }).limit(5000),
       ]);
       if (d.error || e.error) {
         const msg = (d.error || e.error).message || "";
@@ -893,10 +959,24 @@
       }
       gym.days = d.data.sort(sortDays);
       gym.exercises = e.data;
+      gym.tracking = !s.error && !l.error;   // takip tabloları kurulmadıysa sadece program gösterilir
+      gym.sessions = s.data || [];
+      gym.logs = l.data || [];
       if (!gym.days.some((x) => x.id === gym.selected)) {
-        gym.selected = (gym.days.find((x) => x.weekday === todayWd()) || gym.days[0] || {}).id ?? null;
+        const running = activeSession();
+        gym.selected = running?.day_id ?? gym.days.find((x) => x.weekday === todayWd())?.id ?? nextDay()?.id ?? gym.days[0]?.id ?? null;
       }
       renderGym();
+    }
+
+    function renderGymInfo() {
+      const box = $("gymInfo");
+      const last = lastCompleted(), next = nextDay();
+      if (!gym.tracking || gym.editing || (!last && !next)) { box.hidden = true; return; }
+      box.hidden = false;
+      box.innerHTML = last
+        ? `🕒 Son antrenman: <b>${esc(last.day_name)}</b> · ${daysAgo(last.completed_at)} (${dshort(last.completed_at)})${next ? `<br>➡️ Sıradaki: <b>${esc(next.name)}</b>` : ""}`
+        : `➡️ İlk antrenman: <b>${esc(next.name)}</b>`;
     }
 
     function renderGym() {
@@ -906,7 +986,7 @@
         const b = document.createElement("button");
         b.type = "button";
         b.className = "day";
-        b.textContent = (d.weekday ? WDS[d.weekday] + " · " : "") + d.name;
+        b.textContent = (d.weekday ? WDS[d.weekday] + " · " : "") + d.name + (activeSession(d.id) ? " ⏱️" : "");
         b.setAttribute("aria-pressed", String(!gym.editing && d.id === gym.selected));
         b.disabled = gym.editing;
         b.addEventListener("click", () => { gym.selected = d.id; renderGym(); });
@@ -919,6 +999,7 @@
       add.disabled = gym.editing;
       add.addEventListener("click", () => startEdit(null));
       nav.appendChild(add);
+      renderGymInfo();
 
       if (gym.editing) return renderGymEdit();
       const day = gym.days.find((x) => x.id === gym.selected);
@@ -927,7 +1008,45 @@
         return;
       }
       const exs = gym.exercises.filter((x) => x.day_id === day.id);
-      const meta = (x) => [x.sets ? `${x.sets} set` : "", x.reps ? (/^\d+(\s*[-–]\s*\d+)?$/.test(x.reps) ? `${x.reps} tekrar` : x.reps) : "", x.weight || ""].filter(Boolean).join(" · ");
+      const session = gym.tracking ? activeSession(day.id) : null;
+      const sessionLogs = session ? gym.logs.filter((l) => l.session_id === session.id) : [];
+      const logOf = (x, n) => sessionLogs.find((l) => norm(l.exercise_name) === norm(x.name) && l.set_no === n);
+      const totalSets = exs.reduce((a, x) => a + (x.sets ?? 1), 0);
+      const doneToday = gym.sessions.find((s) => s.day_id === day.id && s.completed_at && Date.now() - new Date(s.completed_at) < H12);
+      const target = (x) => [x.sets ? `${x.sets} × ${x.reps || "?"}` : x.reps || "", x.weight || ""].filter(Boolean).join(" · ");
+      const firstNum = (t) => (String(t || "").match(/\d+/) || [""])[0];
+
+      let status = "";
+      if (session) status = `<div class="gym-status">⏱️ Antrenman sürüyor · başlangıç ${hhmm(new Date(session.started_at).getTime())} · ${sessionLogs.length}/${totalSets} set</div>`;
+      else if (doneToday) status = `<div class="gym-status ok">✅ Bugün tamamlandı (${hhmm(new Date(doneToday.completed_at).getTime())}). Yeni bir sete dokunursan yeni antrenman başlar.</div>`;
+
+      const exHtml = exs.map((x) => {
+        const cardio = x.sets == null;
+        const hist = gym.tracking ? historyFor(x.name, session?.id) : [];
+        const prev = hist[0];
+        const rows = Array.from({ length: x.sets ?? 1 }, (_, i) => {
+          const n = i + 1, log = logOf(x, n), p = prev?.sets.find((s) => s.set_no === n) || prev?.sets[prev.sets.length - 1];
+          const phW = p?.weight_kg != null ? fmtKg(p.weight_kg) : "kg";
+          const phR = p?.reps ?? (firstNum(x.reps) || "tekrar");
+          return `<div class="set${log ? " done" : ""}" data-ex="${x.id}" data-set="${n}">
+            <span class="sn">${cardio ? "✓" : n}</span>
+            ${cardio ? `<span class="cardio">${esc(x.reps || "Yapıldı")}</span>` : `
+              <input class="kg" inputmode="decimal" placeholder="${esc(phW)}" value="${log?.weight_kg != null ? fmtKg(log.weight_kg) : ""}" aria-label="Ağırlık (kg)">
+              <span class="x">kg ×</span>
+              <input class="rp" inputmode="numeric" placeholder="${esc(phR)}" value="${log?.reps ?? ""}" aria-label="Tekrar">`}
+            <button type="button" class="chk" aria-label="Set tamam">${log ? "✓" : ""}</button>
+          </div>`;
+        }).join("");
+        const open = gym.openHistory.has(norm(x.name));
+        return `<li><div>
+          <div class="ex-top"><span class="ex-name">${esc(x.name)}</span><span class="ex-target">${esc(target(x))}</span></div>
+          ${x.note ? `<div class="ex-note">📝 ${esc(x.note)}</div>` : ""}
+          ${gym.tracking ? `<div class="sets">${rows}</div>` : ""}
+          ${prev ? `<button type="button" class="prev" data-hist="${esc(norm(x.name))}">Geçen (${dshort(prev.date)}): ${esc(setsText(prev.sets))} ${hist.length > 1 ? (open ? "▴" : "▾") : ""}</button>` : ""}
+          ${open && hist.length > 1 ? `<div class="hist">${hist.slice(1).map((h) => `<div>${dshort(h.date)}: ${esc(setsText(h.sets))}</div>`).join("")}</div>` : ""}
+        </div></li>`;
+      }).join("");
+
       $("gymCard").innerHTML = `
         <div class="gym-head">
           <div>
@@ -937,13 +1056,105 @@
           </div>
           <button class="btn-ghost" type="button" id="gymEditBtn">Düzenle</button>
         </div>
-        ${exs.length ? `<ol class="ex-list">${exs.map((x) => `<li><div>
-            <div class="ex-name">${esc(x.name)}</div>
-            ${meta(x) ? `<div class="ex-meta">${esc(meta(x))}</div>` : ""}
-            ${x.note ? `<div class="ex-note">📝 ${esc(x.note)}</div>` : ""}
-          </div></li>`).join("")}</ol>`
-        : '<div class="empty" style="padding:28px 8px">Bu gün için egzersiz yok.<br>Dinlenme günü mü? 🙂</div>'}`;
+        ${status}
+        ${exs.length ? `<ol class="ex-list">${exHtml}</ol>` : '<div class="empty" style="padding:28px 8px">Bu gün için egzersiz yok.<br>Dinlenme günü mü? 🙂</div>'}
+        ${gym.tracking && exs.length ? (session
+          ? `<button class="btn" type="button" id="gymFinish" style="width:100%;margin:6px 0 4px">✅ Antrenmanı tamamla (${sessionLogs.length}/${totalSets} set)</button>
+             <button class="btn-ghost danger" type="button" id="gymDiscard" style="width:100%;margin-top:6px">${gym.confirmDelete ? "Emin misin? Bu antrenmanın setleri silinecek" : "Antrenmanı iptal et"}</button>`
+          : '<p class="est" style="text-align:center;margin:8px 0 4px">Setleri yaptıkça ✓\'ye dokun. Boş bıraktığın kutularda geçen seferki değerler kullanılır.</p>') : ""}
+        ${gym.tracking ? "" : '<p class="est" style="margin-top:10px">Set takibi için Supabase\'de gym_takip.sql dosyasını çalıştır.</p>'}
+        <p class="error" id="gymErr"></p>`;
+
       $("gymEditBtn").addEventListener("click", () => startEdit(day.id));
+      const card = $("gymCard");
+      card.querySelectorAll(".set .chk").forEach((b) => b.addEventListener("click", () => toggleSet(day, b.closest(".set"))));
+      card.querySelectorAll(".set input").forEach((inp) => inp.addEventListener("change", () => updateSetValues(inp.closest(".set"))));
+      card.querySelectorAll(".prev").forEach((b) => b.addEventListener("click", () => {
+        const k = b.dataset.hist;
+        gym.openHistory.has(k) ? gym.openHistory.delete(k) : gym.openHistory.add(k);
+        renderGym();
+      }));
+      $("gymFinish")?.addEventListener("click", () => finishSession(session, sessionLogs));
+      $("gymDiscard")?.addEventListener("click", () => discardSession(session));
+    }
+
+    function readSet(row, ex) {
+      const kg = row.querySelector(".kg"), rp = row.querySelector(".rp");
+      if (!kg) return { weight_kg: null, reps: null };   // kardiyo/yürüyüş: sadece işaret
+      return {
+        weight_kg: num(kg.value) ?? num(kg.placeholder),
+        reps: num(rp.value) != null ? Math.round(num(rp.value)) : (num(rp.placeholder) != null ? Math.round(num(rp.placeholder)) : null),
+      };
+    }
+
+    async function toggleSet(day, row) {
+      if (gym.busy) return;
+      const ex = gym.exercises.find((x) => x.id === +row.dataset.ex);
+      const setNo = +row.dataset.set;
+      gym.busy = true;
+      try {
+        let session = activeSession(day.id);
+        const existing = session && gym.logs.find((l) => l.session_id === session.id && norm(l.exercise_name) === norm(ex.name) && l.set_no === setNo);
+        if (existing) {
+          const { error } = await sb.from("gym_set_logs").delete().eq("id", existing.id);
+          if (error) throw error;
+          gym.logs = gym.logs.filter((l) => l.id !== existing.id);
+        } else {
+          if (!session) {
+            const { data, error } = await sb.from("gym_sessions").insert({ day_id: day.id, day_name: day.name }).select("*").single();
+            if (error) throw error;
+            session = data;
+            gym.sessions.unshift(session);
+            gym.confirmDelete = false;
+          }
+          const { data, error } = await sb.from("gym_set_logs")
+            .upsert({ session_id: session.id, exercise_id: ex.id, exercise_name: ex.name, set_no: setNo, ...readSet(row, ex) }, { onConflict: "session_id,exercise_name,set_no" })
+            .select("*").single();
+          if (error) throw error;
+          gym.logs = [data, ...gym.logs.filter((l) => l.id !== data.id)];
+        }
+        renderGym();
+      } catch (err) {
+        $("gymErr").textContent = "Kaydedilemedi: " + (err.message || err);
+      } finally {
+        gym.busy = false;
+      }
+    }
+
+    // İşaretli bir setin kg/tekrarı değiştirilirse kaydı güncelle
+    async function updateSetValues(row) {
+      const day = gym.days.find((x) => x.id === gym.selected);
+      const session = day && activeSession(day.id);
+      if (!session) return;
+      const ex = gym.exercises.find((x) => x.id === +row.dataset.ex);
+      const log = gym.logs.find((l) => l.session_id === session.id && norm(l.exercise_name) === norm(ex.name) && l.set_no === +row.dataset.set);
+      if (!log) return;
+      const vals = readSet(row, ex);
+      const { error } = await sb.from("gym_set_logs").update(vals).eq("id", log.id);
+      if (error) { $("gymErr").textContent = "Güncellenemedi: " + error.message; return; }
+      Object.assign(log, vals);
+    }
+
+    async function finishSession(session, sessionLogs) {
+      if (gym.busy) return;
+      gym.busy = true;
+      const { error } = await sb.from("gym_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
+      gym.busy = false;
+      if (error) { $("gymErr").textContent = "Tamamlanamadı: " + error.message; return; }
+      const volume = sessionLogs.reduce((a, l) => a + (l.weight_kg || 0) * (l.reps || 0), 0);
+      await loadGym();
+      const banner = document.createElement("div");
+      banner.className = "gym-status ok";
+      banner.textContent = `🎉 Tebrikler! ${sessionLogs.length} set${volume ? ` · toplam ${Math.round(volume).toLocaleString("tr-TR")} kg hacim` : ""}`;
+      $("gymCard").prepend(banner);
+    }
+
+    async function discardSession(session) {
+      if (!gym.confirmDelete) { gym.confirmDelete = true; renderGym(); return; }
+      gym.confirmDelete = false;
+      const { error } = await sb.from("gym_sessions").delete().eq("id", session.id);
+      if (error) { $("gymErr").textContent = "İptal edilemedi: " + error.message; return; }
+      await loadGym();
     }
 
     function startEdit(dayId) {
