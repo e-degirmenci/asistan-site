@@ -362,6 +362,56 @@
     .exam.past { opacity: .55; }
     .mini-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
 
+    /* Gym oyunlaştırma */
+    .gx { padding: 14px 16px; margin-bottom: 12px; }
+    .gx-top { display: flex; align-items: center; gap: 12px; }
+    .lvl {
+      flex: 0 0 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+      font-size: 22px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #f08c00, #e8590c);
+      box-shadow: 0 4px 12px rgba(232, 89, 12, .3);
+    }
+    .gx-main { flex: 1; min-width: 0; }
+    .gx-title { font-weight: 700; font-size: 16px; }
+    .xpbar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 6px 0 4px; }
+    .xpbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #f08c00, #e8590c); transition: width .4s; }
+    .gx-sub { color: var(--muted); font-size: 12px; }
+    .gx-row { display: flex; align-items: center; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .gx-streak { display: flex; align-items: center; gap: 6px; }
+    .gx-streak .fl { font-size: 28px; line-height: 1; }
+    .gx-streak b { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+    .gx-streak span:last-child { color: var(--muted); font-size: 12px; line-height: 1.2; }
+    .gx-streak.off .fl { filter: grayscale(1); opacity: .45; }
+    .gx-week { flex: 1; min-width: 0; text-align: right; }
+    .wdots { display: inline-flex; gap: 4px; }
+    .wdots i {
+      width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+      font-size: 11px; font-weight: 700; background: var(--bg); color: var(--muted); border: 1.5px solid var(--line);
+    }
+    .wdots i.on { background: #2f9e44; border-color: #2f9e44; color: #fff; }
+    .wdots i.today:not(.on) { border-color: var(--accent); color: var(--accent); }
+    .gx-goal { display: block; margin: 6px 0 0 auto; border: 0; background: none; padding: 0; font: inherit; font-size: 13px; color: var(--muted); cursor: pointer; }
+    .gx-goal b { color: var(--text); }
+    .gx-goal-edit { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 14px; margin-top: 8px; }
+    .gx-goal-edit .mini-btn { width: 32px; padding: 4px 0; font-size: 16px; }
+    .gx-note { font-size: 14px; margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: var(--accent-soft); }
+    .gx-bhead { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: none; padding: 0; font: inherit; font-weight: 650; color: var(--text); cursor: pointer; }
+    #gymBadges { margin-top: 12px; padding: 14px 16px; }
+    .badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .bdg { text-align: center; padding: 10px 4px 8px; border-radius: 12px; background: var(--bg); }
+    .bdg .bi { font-size: 26px; line-height: 1.1; filter: grayscale(1); opacity: .35; }
+    .bdg .bn { font-size: 12px; font-weight: 650; margin-top: 4px; color: var(--muted); }
+    .bdg .bd { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+    .bdg.got { background: rgba(240, 140, 0, .12); }
+    .bdg.got .bi { filter: none; opacity: 1; }
+    .bdg.got .bn { color: var(--text); }
+    .bdg.got .bd { color: #e8590c; font-weight: 600; }
+    .set .sn.pr { font-size: 18px; }
+    .toast {
+      position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+      background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 14px; font-weight: 650; font-size: 15px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .25); max-width: calc(100% - 32px); text-align: center;
+    }
+
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
       position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
@@ -459,9 +509,11 @@
 
       <!-- Sekme: Gym -->
       <div id="tab-gym" role="tabpanel" hidden>
+        <div class="card gx" id="gymStats" hidden></div>
         <div class="gym-info" id="gymInfo" hidden></div>
         <nav class="days" id="gymDays" aria-label="Program günleri"></nav>
         <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
+        <article class="card" id="gymBadges" hidden></article>
       </div>
 
       <!-- Sekme: Ders -->
@@ -503,6 +555,7 @@
     </section>
   </div>
 
+  <div class="toast" id="toast" role="status" hidden></div>
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@16.4.1/lib/marked.umd.js"></script>
@@ -1093,7 +1146,7 @@
     const WD = ["", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     const WDS = ["", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
     const gym = {
-      days: [], exercises: [], sessions: [], logs: [], tracking: true,
+      days: [], exercises: [], sessions: [], logs: [], tracking: true, goal: 3,
       selected: null, editing: false, draft: null, confirmDelete: false, busy: false, openHistory: new Set(), openEx: null,
     };
     const todayWd = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
@@ -1137,11 +1190,12 @@
     const setsText = (sets) => sets.map((l) => (l.weight_kg != null ? `${fmtKg(l.weight_kg)}×${l.reps ?? "?"}` : `${l.reps ?? "✓"}`)).join(" · ");
 
     async function fetchGym() {
-      const [d, e, s, l] = await Promise.all([
+      const [d, e, s, l, g] = await Promise.all([
         sb.from("gym_days").select("*"),
         sb.from("gym_exercises").select("*").order("position").order("id"),
         sb.from("gym_sessions").select("*").order("started_at", { ascending: false }).limit(300),
         sb.from("gym_set_logs").select("*").order("created_at", { ascending: false }).limit(5000),
+        sb.from("gym_settings").select("weekly_goal").maybeSingle(),
       ]);
       if (d.error || e.error) throw d.error || e.error;
       gym.days = d.data.sort(sortDays);
@@ -1149,6 +1203,7 @@
       gym.tracking = !s.error && !l.error;   // takip tabloları kurulmadıysa sadece program gösterilir
       gym.sessions = s.data || [];
       gym.logs = l.data || [];
+      if (!g.error && g.data?.weekly_goal) gym.goal = g.data.weekly_goal;
       if (!gym.days.some((x) => x.id === gym.selected)) {
         const running = activeSession();
         gym.selected = running?.day_id ?? gym.days.find((x) => x.weekday === todayWd())?.id ?? nextDay()?.id ?? gym.days[0]?.id ?? null;
@@ -1195,6 +1250,9 @@
       add.addEventListener("click", () => startEdit(null));
       nav.appendChild(add);
       renderGymInfo();
+      const gst = gym.tracking ? gymStats() : null;
+      renderGymStats(gst);
+      renderGymBadges(gst);
 
       if (gym.editing) return renderGymEdit();
       const day = gym.days.find((x) => x.id === gym.selected);
@@ -1226,7 +1284,7 @@
           const phW = p?.weight_kg != null ? fmtKg(p.weight_kg) : "–";
           const phR = p?.reps ?? (firstNum(x.reps) || "–");
           return `<div class="set${log ? " done" : ""}${cardio ? " cardio-row" : ""}" data-ex="${x.id}" data-set="${n}">
-            <span class="sn">${cardio ? "" : `Set ${n}`}</span>
+            <span class="sn${log && gst?.prIds.has(log.id) ? " pr" : ""}" title="${log && gst?.prIds.has(log.id) ? "Kişisel rekor" : ""}">${cardio ? "" : log && gst?.prIds.has(log.id) ? "🏆" : `Set ${n}`}</span>
             ${cardio ? `<span class="cardio">${esc(x.reps || "Yapıldı")}</span>` : `
               <input class="kg" inputmode="decimal" placeholder="${esc(phW)}" value="${log?.weight_kg != null ? fmtKg(log.weight_kg) : ""}" aria-label="Set ${n} ağırlık (kg)">
               <span class="x">kg</span>
@@ -1325,6 +1383,7 @@
             .select("*").single();
           if (error) throw error;
           gym.logs = [data, ...gym.logs.filter((l) => l.id !== data.id)];
+          if (gymStats().prIds.has(data.id)) toast(`🏆 Yeni rekor! ${ex.name} · ${fmtKg(data.weight_kg)} kg`);
           const doneSets = new Set(gym.logs.filter((l) => l.session_id === session.id).map((l) => norm(l.exercise_name) + "#" + l.set_no));
           const finished = (x) => Array.from({ length: x.sets ?? 1 }, (_, i) => doneSets.has(norm(x.name) + "#" + (i + 1))).every(Boolean);
           if (finished(ex)) {
@@ -1364,9 +1423,13 @@
       if (error) { $("gymErr").textContent = "Tamamlanamadı: " + error.message; return; }
       const volume = sessionLogs.reduce((a, l) => a + (l.weight_kg || 0) * (l.reps || 0), 0);
       await loadGym();
+      const st = gymStats(), ps = st.perSession.get(session.id) || { xp: 0, prs: 0 };
+      const levelBefore = levelOf(st.xp - ps.xp).L;
       const banner = document.createElement("div");
       banner.className = "gym-status ok";
-      banner.textContent = `🎉 Tebrikler! ${sessionLogs.length} set${volume ? ` · toplam ${Math.round(volume).toLocaleString("tr-TR")} kg hacim` : ""}`;
+      banner.innerHTML = `🎉 Tebrikler! <b>+${ps.xp} XP</b> · ${sessionLogs.length} set${volume ? ` · ${Math.round(volume).toLocaleString("tr-TR")} kg hacim` : ""}${ps.prs ? ` · 🏆 ${ps.prs} rekor` : ""}`
+        + (st.lvl.L > levelBefore ? `<br>⬆️ Seviye atladın: <b>Seviye ${st.lvl.L} · ${st.lvl.title}</b>` : "")
+        + (st.thisCount === st.goal ? `<br>🔥 Haftalık hedef tamam!${st.streak > 1 ? ` Seri: ${st.streak} hafta` : ""}` : "");
       $("gymCard").prepend(banner);
     }
 
@@ -2125,6 +2188,175 @@
     });
     document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "ders" && loggedIn) loadDers(); });
 
+    // ---------- Gym oyunlaştırma: haftalık seri, XP/seviye, rekorlar, rozetler ----------
+    // Her şey mevcut antrenman kayıtlarından hesaplanır; sadece haftalık hedef ayrıca saklanır.
+    const LEVEL_TITLES = [[1, "Çaylak"], [3, "Düzenli"], [5, "Azimli"], [8, "Demir"], [12, "Çelik"], [16, "Titan"], [20, "Efsane"]];
+    const gx = { goalOpen: false, badgesOpen: false };
+    const gxDay = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date(iso));
+    const shiftDay = (ds, n) => { const d = new Date(ds + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const weekOf = (iso) => { const ds = gxDay(iso), wd = (new Date(ds + "T12:00:00Z").getUTCDay() + 6) % 7; return shiftDay(ds, -wd); };   // haftanın pazartesisi
+    const berlinHour = (iso) => +new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", hour12: false, timeZone: "Europe/Berlin" }).slice(0, 2);
+
+    function levelOf(xp) {
+      let L = 1, need = 300, rest = xp;
+      while (rest >= need) { rest -= need; L++; need = 300 + 100 * (L - 1); }
+      return { L, into: rest, need, title: [...LEVEL_TITLES].reverse().find(([l]) => L >= l)[1] };
+    }
+
+    function gymStats() {
+      const logsBy = new Map();
+      for (const l of gym.logs) { if (!logsBy.has(l.session_id)) logsBy.set(l.session_id, []); logsBy.get(l.session_id).push(l); }
+      // Sayılan antrenman: tamamlanan ya da en az bir seti işaretlenen ("Tamamla"ya basmayı unutsan da sayılır)
+      const sessions = gym.sessions.filter((s) => s.completed_at || logsBy.has(s.id)).sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
+      const best = new Map(), prIds = new Set(), perSession = new Map();
+      let xp = 0, prCount = 0, totalVol = 0, maxVol = 0, early = false, late = false, fullSession = false;
+      for (const s of sessions) {
+        const ls = logsBy.get(s.id) || [];
+        const sessBest = new Map();
+        let vol = 0;
+        for (const l of ls) {
+          vol += (+l.weight_kg || 0) * (l.reps || 0);
+          if (l.weight_kg == null) continue;
+          const k = norm(l.exercise_name), prev = best.get(k);
+          if (prev != null && +l.weight_kg > prev) prIds.add(l.id);   // önceki antrenmanlardaki en yüksek ağırlığı geçti
+          sessBest.set(k, Math.max(sessBest.get(k) ?? -1, +l.weight_kg));
+        }
+        for (const [k, w] of sessBest) best.set(k, Math.max(best.get(k) ?? -1, w));
+        const prs = new Set(ls.filter((l) => prIds.has(l.id)).map((l) => norm(l.exercise_name))).size;
+        const gained = 50 + ls.length * 5 + prs * 25;
+        perSession.set(s.id, { xp: gained, prs, vol, sets: ls.length });
+        xp += gained; prCount += prs; totalVol += vol; maxVol = Math.max(maxVol, vol);
+        const h = berlinHour(s.started_at);
+        if (h < 8) early = true;
+        if (h >= 21) late = true;
+        const total = gym.exercises.filter((x) => x.day_id === s.day_id).reduce((a, x) => a + (x.sets ?? 1), 0);
+        if (total && ls.length >= total) fullSession = true;
+      }
+      // Haftalık seri: hedefi tutturduğun ardışık haftalar (antrenman yaptığın farklı gün sayısı)
+      const goal = gym.goal || 3;
+      const weekDays = new Map(), weekProgram = new Map();
+      for (const s of sessions) {
+        const wk = weekOf(s.started_at);
+        if (!weekDays.has(wk)) { weekDays.set(wk, new Set()); weekProgram.set(wk, new Set()); }
+        weekDays.get(wk).add(gxDay(s.started_at));
+        weekProgram.get(wk).add(s.day_id);
+      }
+      const cnt = (wk) => weekDays.get(wk)?.size || 0;
+      const thisWk = weekOf(new Date().toISOString());
+      let streak = 0, wk = cnt(thisWk) >= goal ? thisWk : shiftDay(thisWk, -7);
+      while (cnt(wk) >= goal) { streak++; wk = shiftDay(wk, -7); }
+      let bestStreak = 0, run = 0;
+      if (sessions.length) {
+        for (let w = weekOf(sessions[0].started_at); w <= thisWk; w = shiftDay(w, 7)) {
+          run = cnt(w) >= goal ? run + 1 : 0;
+          bestStreak = Math.max(bestStreak, run);
+        }
+      }
+      const ids = gym.days.map((d) => d.id);
+      const fullWeek = ids.length >= 2 && [...weekProgram.values()].some((set) => ids.every((id) => set.has(id)));
+      const today = gxDay(new Date().toISOString());
+      const week = Array.from({ length: 7 }, (_, i) => { const ds = shiftDay(thisWk, i); return { ds, on: weekDays.get(thisWk)?.has(ds) || false, today: ds === today, future: ds > today }; });
+      return { n: sessions.length, xp, lvl: levelOf(xp), prIds, prCount, perSession, totalVol, maxVol, early, late, fullSession, fullWeek, goal, streak, bestStreak, thisCount: cnt(thisWk), week };
+    }
+
+    function badgesOf(st) {
+      const on = (b) => (b ? 1 : 0);
+      return [
+        ["🥇", "İlk adım", "İlk antrenmanını yap", st.n, 1],
+        ["💪", "10 antrenman", "Toplam 10 antrenman", st.n, 10],
+        ["🏋️", "25 antrenman", "Toplam 25 antrenman", st.n, 25],
+        ["🦾", "50 antrenman", "Toplam 50 antrenman", st.n, 50],
+        ["👑", "100 antrenman", "Toplam 100 antrenman", st.n, 100],
+        ["🔥", "2 hafta seri", "Haftalık hedefi 2 hafta üst üste tuttur", st.bestStreak, 2],
+        ["🔥", "4 hafta seri", "Haftalık hedefi 4 hafta üst üste tuttur", st.bestStreak, 4],
+        ["☄️", "8 hafta seri", "Haftalık hedefi 8 hafta üst üste tuttur", st.bestStreak, 8],
+        ["🌋", "12 hafta seri", "Haftalık hedefi 12 hafta üst üste tuttur", st.bestStreak, 12],
+        ["🏆", "İlk rekor", "Bir harekette ağırlık rekorunu kır", st.prCount, 1],
+        ["🏆", "10 rekor", "Toplam 10 rekor", st.prCount, 10],
+        ["🏅", "25 rekor", "Toplam 25 rekor", st.prCount, 25],
+        ["🧱", "10 ton", "Tek antrenmanda 10.000 kg hacim", Math.round(st.maxVol), 10000],
+        ["🐘", "100 ton", "Toplam 100.000 kg hacim", Math.round(st.totalVol), 100000],
+        ["✅", "Tam program", "Programdaki her günü aynı hafta yap", on(st.fullWeek), 1],
+        ["💯", "Eksiksiz", "Bir antrenmanda bütün setleri bitir", on(st.fullSession), 1],
+        ["🌅", "Sabah kuşu", "08:00'den önce antrenmana başla", on(st.early), 1],
+        ["🌙", "Gece kuşu", "21:00'den sonra antrenmana başla", on(st.late), 1],
+      ].map(([icon, name, desc, have, need]) => ({ icon, name, desc, have: Math.min(have, need), need, got: have >= need }));
+    }
+
+    function renderGymStats(st) {
+      const box = $("gymStats");
+      if (!gym.tracking || gym.editing || !st) { box.hidden = true; return; }
+      box.hidden = false;
+      const { lvl } = st, pct = Math.round((lvl.into / lvl.need) * 100);
+      const dots = st.week.map((d, i) => `<i class="${d.on ? "on" : ""}${d.today ? " today" : ""}" title="${WD[i + 1]}">${["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"][i]}</i>`).join("");
+      const left = st.goal - st.thisCount;
+      let note;
+      if (left <= 0) note = "✅ Bu haftanın hedefi tamam!";
+      else if (st.streak > 0) note = `Seriyi korumak için bu hafta <b>${left}</b> antrenman daha`;
+      else note = st.n ? `Seriyi başlatmak için bu hafta <b>${left}</b> antrenman daha` : "İlk antrenmanınla seriyi başlat 💪";
+      box.innerHTML = `
+        <div class="gx-top">
+          <div class="lvl" aria-label="Seviye">${lvl.L}</div>
+          <div class="gx-main">
+            <div class="gx-title">Seviye ${lvl.L} · ${lvl.title}</div>
+            <div class="xpbar"><i style="width:${pct}%"></i></div>
+            <div class="gx-sub">${lvl.into} / ${lvl.need} XP · sonraki seviyeye ${lvl.need - lvl.into} XP</div>
+          </div>
+        </div>
+        <div class="gx-row">
+          <div class="gx-streak${st.streak ? "" : " off"}"><span class="fl">🔥</span><b>${st.streak}</b><span>hafta<br>seri</span></div>
+          <div class="gx-week">
+            <div class="wdots">${dots}</div>
+            <button type="button" class="gx-goal" id="gxGoalBtn">Bu hafta <b>${st.thisCount}/${st.goal}</b> · hedefi değiştir</button>
+          </div>
+        </div>
+        ${gx.goalOpen ? `<div class="gx-goal-edit">Haftalık hedef:
+            <button type="button" class="mini-btn" data-goal="-1" aria-label="Azalt">−</button><b>${st.goal}</b>
+            <button type="button" class="mini-btn" data-goal="1" aria-label="Artır">+</button> antrenman</div>` : ""}
+        <div class="gx-note">${note}</div>`;
+      $("gxGoalBtn").addEventListener("click", () => { gx.goalOpen = !gx.goalOpen; renderGymStats(gymStats()); });
+      box.querySelectorAll("[data-goal]").forEach((b) => b.addEventListener("click", () => setGoal(st.goal + +b.dataset.goal)));
+    }
+
+    async function setGoal(v) {
+      v = Math.max(1, Math.min(7, v));
+      const prev = gym.goal;
+      gym.goal = v;
+      renderGym();
+      const { error } = await sb.from("gym_settings").upsert({ weekly_goal: v }, { onConflict: "user_id" });
+      if (error) { gym.goal = prev; renderGym(); toast("Hedef kaydedilemedi: " + error.message); }
+    }
+
+    function renderGymBadges(st) {
+      const box = $("gymBadges");
+      if (!gym.tracking || gym.editing || !st) { box.hidden = true; return; }
+      box.hidden = false;
+      const list = badgesOf(st), got = list.filter((b) => b.got).length;
+      box.innerHTML = `<button type="button" class="gx-bhead" id="gxBadgeBtn" aria-expanded="${gx.badgesOpen}">
+          <span>🏅 Rozetler</span><span class="est">${got}/${list.length} ${gx.badgesOpen ? "▴" : "▾"}</span></button>
+        ${gx.badgesOpen ? `<div class="badges">${list.map((b) => `<div class="bdg${b.got ? " got" : ""}" title="${esc(b.desc)}">
+            <div class="bi">${b.icon}</div><div class="bn">${esc(b.name)}</div>
+            <div class="bd">${b.got ? "✓ kazanıldı" : b.need > 1 ? `${b.have.toLocaleString("tr-TR")}/${b.need.toLocaleString("tr-TR")}` : esc(b.desc)}</div>
+          </div>`).join("")}</div>
+          <p class="est" style="margin:10px 2px 0">XP: antrenman başına 50 · set başına 5 · rekor başına 25.</p>` : ""}`;
+      $("gxBadgeBtn").addEventListener("click", () => { gx.badgesOpen = !gx.badgesOpen; renderGymBadges(gymStats()); });
+    }
+
+    let toastTimer = null;
+    function toast(text) {
+      const t = $("toast");
+      t.textContent = text;
+      t.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+    }
+
+    function gymStreakLine() {
+      if (!gym.tracking) return "";
+      const st = gymStats();
+      return `<div class="tc-line muted">${st.streak ? `🔥 ${st.streak} hafta seri · ` : ""}bu hafta ${st.thisCount}/${st.goal} · Seviye ${st.lvl.L}</div>`;
+    }
+
     // ---------- Bugün ekranı ----------
     let todayTimer = null;
     function setCard(id, html) { $(id).querySelector(".tc-body").innerHTML = html; $(id).querySelector(".tc-body").classList.remove("est"); }
@@ -2181,7 +2413,7 @@
         const exs = gym.exercises.filter((x) => x.day_id === running.day_id);
         const total = exs.reduce((a, x) => a + (x.sets ?? 1), 0);
         const done = gym.logs.filter((l) => l.session_id === running.id).length;
-        setCard("tGym", `<div class="tc-big">⏱️ ${esc(day?.name || running.day_name)}</div><div class="tc-line">Antrenman sürüyor · ${done}/${total} set</div>`);
+        setCard("tGym", `<div class="tc-big">⏱️ ${esc(day?.name || running.day_name)}</div><div class="tc-line">Antrenman sürüyor · ${done}/${total} set</div>${gymStreakLine()}`);
         return;
       }
       const last = gym.tracking && lastCompleted();
@@ -2189,14 +2421,14 @@
       if (doneToday) {
         const n = gym.logs.filter((l) => l.session_id === last.id).length;
         setCard("tGym", `<div class="tc-big">✅ ${esc(last.day_name)}</div><div class="tc-line">Bugün tamamlandı · ${n} set</div>
-          ${nextDay() ? `<div class="tc-line muted">Sıradaki: ${esc(nextDay().name)}</div>` : ""}`);
+          ${nextDay() ? `<div class="tc-line muted">Sıradaki: ${esc(nextDay().name)}</div>` : ""}${gymStreakLine()}`);
         return;
       }
       const planned = gym.days.find((d) => d.weekday === todayWd()) || nextDay() || gym.days[0];
       const count = gym.exercises.filter((x) => x.day_id === planned.id).length;
       setCard("tGym", `<div class="tc-big">${esc(planned.name)}</div>
         <div class="tc-line muted">${planned.description ? esc(planned.description) + " · " : ""}${count} hareket</div>
-        ${last ? `<div class="tc-line muted">Son antrenman: ${daysAgo(last.completed_at)} (${esc(last.day_name)})</div>` : ""}`);
+        ${last ? `<div class="tc-line muted">Son antrenman: ${daysAgo(last.completed_at)} (${esc(last.day_name)})</div>` : ""}${gymStreakLine()}`);
     }
 
     function todayMail() {
