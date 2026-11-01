@@ -114,7 +114,7 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
@@ -124,6 +124,7 @@
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
     .tab .ti { font-size: 19px; line-height: 1.1; }
+    @media (max-width: 380px) { .tab { font-size: 11px; } .tabs { padding: 3px; } }
 
     /* Bugün */
     .hello { margin: 2px 2px 14px; }
@@ -270,18 +271,11 @@
     .prev { display: block; border: 0; background: none; padding: 0; margin-top: 8px; font: inherit; font-size: 13px; color: var(--muted); text-align: left; cursor: pointer; }
     .hist { font-size: 13px; color: var(--muted); margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--line); display: grid; gap: 2px; }
 
-    /* Liste sekmesi: Market + Alışkanlık */
-    .seg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
-    .seg2 button {
-      font: inherit; font-size: 15px; font-weight: 600; padding: 10px 4px; border-radius: 12px; cursor: pointer;
-      border: 1px solid var(--line); background: var(--surface); color: var(--text);
-    }
-    .seg2 button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    /* Market ve To-do listeleri */
+    .list-card { padding-bottom: 14px; }
     .add-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 2px 0 10px; }
     .add-row input { padding: 11px 13px; font-size: 16px; background: var(--bg); }
     .add-row .btn { padding: 0 18px; font-size: 22px; line-height: 1; }
-    .add-row.habit { grid-template-columns: 58px 1fr auto; }
-    .add-row.habit input:first-child { text-align: center; padding: 11px 4px; }
     .items { list-style: none; padding: 0; margin: 0; }
     .item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
     .item:first-child { border-top: 0; }
@@ -293,24 +287,8 @@
     .item .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; cursor: pointer; }
     .item.done .nm { color: var(--muted); text-decoration: line-through; }
     .item .del { border: 0; background: none; color: var(--muted); font-size: 20px; padding: 2px 6px; cursor: pointer; line-height: 1; }
-    .item .del.sure { color: var(--danger); font-size: 13px; font-weight: 650; }
     .sub-h { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: .02em; margin: 16px 0 2px; }
     .sub-h button { border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; padding: 0; }
-    .hb-meta { font-size: 13px; color: var(--muted); margin-top: 2px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .item.on .tick { background: #2f9e44; border-color: #2f9e44; color: #fff; }
-    .item .hb { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .dots { display: inline-flex; gap: 5px; }
-    .dots button { width: 16px; height: 16px; border-radius: 50%; border: 0; padding: 0; background: var(--line); cursor: pointer; }
-    .dots button.on { background: #2f9e44; }
-    .dots button.today { outline: 1.5px solid var(--muted); outline-offset: 1.5px; }
-    .hb-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .hb-top .meta { margin: 0; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .chip {
-      font: inherit; font-size: 14px; padding: 6px 11px; border-radius: 999px; cursor: pointer;
-      border: 1px solid var(--line); background: var(--bg); color: var(--text);
-    }
-    .chip.on { background: rgba(47, 158, 68, .14); border-color: rgba(47, 158, 68, .5); }
 
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
@@ -360,7 +338,8 @@
         <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false"><span class="ti">🌤️</span>Hava</button>
         <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false"><span class="ti">🚇</span>Ulaşım</button>
         <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false"><span class="ti">🏋️</span>Gym</button>
-        <button class="tab" role="tab" type="button" data-tab="liste" aria-selected="false"><span class="ti">📝</span>Liste</button>
+        <button class="tab" role="tab" type="button" data-tab="market" aria-selected="false"><span class="ti">🛒</span>Market</button>
+        <button class="tab" role="tab" type="button" data-tab="todo" aria-selected="false"><span class="ti">✅</span>To-do</button>
       </div>
 
       <!-- Sekme: Bugün -->
@@ -368,10 +347,10 @@
         <div class="hello"><h2 id="helloTitle"></h2><div id="helloDate" class="wx-sub"></div></div>
         <article class="card tcard" id="tWx" data-goto="hava"><div class="tc-head"><span>🌤️ Hava</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tTransit" data-goto="ulasim"><div class="tc-head"><span>🚇 Ulaşım</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
-        <article class="card tcard" id="tHabit" data-goto="liste" data-sub="habit"><div class="tc-head"><span>✅ Alışkanlıklar</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tTodo" data-goto="todo"><div class="tc-head"><span>✅ To-do</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tGym" data-goto="gym"><div class="tc-head"><span>🏋️ Gym</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tMail" data-goto="mail"><div class="tc-head"><span>📬 Mail</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
-        <article class="card tcard" id="tGrocery" data-goto="liste" data-sub="market"><div class="tc-head"><span>🛒 Market</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tGrocery" data-goto="market"><div class="tc-head"><span>🛒 Market</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
       </div>
 
       <!-- Sekme: E-mailler -->
@@ -411,13 +390,28 @@
         <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
       </div>
 
-      <!-- Sekme: Liste (Market + Alışkanlık) -->
-      <div id="tab-liste" role="tabpanel" hidden>
-        <div class="seg2" id="listSeg">
-          <button type="button" data-sub="market" aria-pressed="true">🛒 Market</button>
-          <button type="button" data-sub="habit" aria-pressed="false">✅ Alışkanlık</button>
-        </div>
-        <article class="card" id="listCard" style="padding-bottom:14px"><div class="empty">Yükleniyor…</div></article>
+      <!-- Sekme: Market -->
+      <div id="tab-market" role="tabpanel" hidden>
+        <article class="card list-card">
+          <div class="add-row">
+            <input id="marketIn" placeholder="Ne alınacak? (ör. süt, ekmek)" autocomplete="off" enterkeyhint="done" aria-label="Ürün ekle">
+            <button class="btn" type="button" id="marketAdd" aria-label="Ekle">+</button>
+          </div>
+          <div id="marketItems"><div class="empty">Yükleniyor…</div></div>
+          <p class="error" id="marketErr"></p>
+        </article>
+      </div>
+
+      <!-- Sekme: To-do -->
+      <div id="tab-todo" role="tabpanel" hidden>
+        <article class="card list-card">
+          <div class="add-row">
+            <input id="todoIn" placeholder="Yapılacak bir şey ekle" autocomplete="off" enterkeyhint="done" aria-label="Yapılacak ekle">
+            <button class="btn" type="button" id="todoAdd" aria-label="Ekle">+</button>
+          </div>
+          <div id="todoItems"><div class="empty">Yükleniyor…</div></div>
+          <p class="error" id="todoErr"></p>
+        </article>
       </div>
 
       <footer id="footer"></footer>
@@ -474,7 +468,7 @@
       if (currentTab === "ulasim") loadTransit();
       if (currentTab === "gym") loadGym();
       if (currentTab === "hava") loadWeather();
-      if (currentTab === "liste") loadLists();
+      if (LISTS[currentTab]) loadList(currentTab);
       await loadDigests();
       if (currentTab === "bugun") loadToday();
       await refreshNotice();
@@ -644,7 +638,8 @@
       $("tab-hava").hidden = name !== "hava";
       $("tab-ulasim").hidden = name !== "ulasim";
       $("tab-gym").hidden = name !== "gym";
-      $("tab-liste").hidden = name !== "liste";
+      $("tab-market").hidden = name !== "market";
+      $("tab-todo").hidden = name !== "todo";
       currentTab = name;
       if (!loggedIn) return;   // girişten önce veri çekme
       if (name === "bugun") loadToday();
@@ -652,7 +647,7 @@
       if (name === "hava") loadWeather();
       if (name === "ulasim") loadTransit();
       if (name === "gym" && !gym.editing) loadGym();
-      if (name === "liste") loadLists();
+      if (LISTS[name]) loadList(name);
     }
     for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -1417,252 +1412,116 @@
       }
     }
 
-    // ---------- Liste: Market + Alışkanlık (Supabase'de saklanır) ----------
-    const lists = { sub: "market", shown: null, ready: false, grocery: [], habits: [], checks: [], editHabits: false, sureDel: null };
-    const pendingChecks = new Set();   // gönderilmekte olan alışkanlık işaretleri (çift dokunma koruması)
-    const addDays = (ds, n) => { const d = new Date(ds + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-    const ckKey = (hid, ds) => hid + "|" + ds;
-    let ckSet = new Set();
-    const rebuildChecks = () => { ckSet = new Set(lists.checks.map((c) => ckKey(c.habit_id, c.check_date))); };
-    const habitLabel = (h) => (h.emoji ? h.emoji + " " : "") + h.name;
-    function streakOf(hid) {
-      // Bugün henüz yapılmadıysa seri dünden sayılır (gün bitmeden seri bozulmuş görünmesin)
-      const t = todayStr();
-      let ds = ckSet.has(ckKey(hid, t)) ? t : addDays(t, -1), n = 0;
-      while (ckSet.has(ckKey(hid, ds))) { n++; ds = addDays(ds, -1); }
-      return n;
-    }
-    function listErr(msg) { const e = $("listErr"); if (e) e.textContent = msg; }
+    // ---------- Market ve To-do listeleri (Supabase'de saklanır) ----------
+    // İkisi aynı kodu kullanır; farkları sadece metinler ve tablo adı.
+    const LISTS = {
+      market: {
+        table: "grocery_items", split: true, tick: "Alındı",
+        doneTitle: "SEPETTE", clearText: "Sepeti temizle", allDone: "Hepsi sepette 🎉",
+        empty: "Liste boş. Yukarıdan ekle.<br><small>Virgülle birden fazla ürün ekleyebilirsin.</small>",
+      },
+      todo: {
+        table: "todo_items", split: false, tick: "Tamamlandı",
+        doneTitle: "TAMAMLANDI", clearText: "Temizle", allDone: "Hepsi bitti 🎉",
+        empty: "Yapılacak bir şey yok. Yukarıdan ekle.",
+      },
+    };
+    const listData = { market: [], todo: [] };
 
-    async function fetchLists() {
-      const [g, h, c] = await Promise.all([
-        sb.from("grocery_items").select("*").order("created_at").order("id"),
-        sb.from("habits").select("*").order("position").order("id"),
-        sb.from("habit_checks").select("habit_id,check_date").gte("check_date", addDays(todayStr(), -120)),
-      ]);
-      const err = g.error || h.error || c.error;
-      if (err) throw err;
-      lists.grocery = g.data;
-      lists.habits = h.data;
-      if (!pendingChecks.size) { lists.checks = c.data; rebuildChecks(); }
-      lists.ready = true;
+    async function fetchList(key) {
+      const { data, error } = await sb.from(LISTS[key].table).select("*").order("created_at").order("id");
+      if (error) throw error;
+      listData[key] = data;
     }
 
-    async function loadLists() {
-      if (lists.shown !== lists.sub) renderList();
+    async function loadList(key) {
       try {
-        await fetchLists();
+        await fetchList(key);
+        paintList(key);
       } catch (err) {
-        lists.shown = null;
-        $("listCard").innerHTML = `<div class="empty">Liste yüklenemedi.<br><small>${esc(err.message || err)}</small><br><small>Supabase'de listeler.sql dosyasını çalıştırdın mı?</small></div>`;
-        return;
-      }
-      // Ekran zaten açıksa sadece listeyi yenile (yazmakta olduğun metin silinmesin)
-      if (lists.shown !== lists.sub) renderList();
-      else if (lists.sub === "market") paintGrocery();
-      else paintHabits();
-    }
-
-    for (const b of $("listSeg").children) b.addEventListener("click", () => {
-      lists.sub = b.dataset.sub;
-      lists.editHabits = false;
-      renderList();
-    });
-
-    function renderList() {
-      for (const b of $("listSeg").children) b.setAttribute("aria-pressed", String(b.dataset.sub === lists.sub));
-      lists.sureDel = null;
-      if (!lists.ready) { lists.shown = null; $("listCard").innerHTML = '<div class="empty">Yükleniyor…</div>'; return; }
-      lists.shown = lists.sub;
-      if (lists.sub === "market") {
-        $("listCard").innerHTML = `
-          <div class="add-row">
-            <input id="gIn" placeholder="Ne alınacak? (ör. süt, ekmek)" autocomplete="off" enterkeyhint="done" aria-label="Ürün ekle">
-            <button class="btn" type="button" id="gAdd" aria-label="Ekle">+</button>
-          </div>
-          <div id="gItems"></div>
-          <p class="error" id="listErr"></p>`;
-        $("gAdd").addEventListener("click", () => addGrocery($("gIn")));
-        $("gIn").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addGrocery($("gIn")); } });
-        paintGrocery();
-      } else {
-        $("listCard").innerHTML = `
-          <div class="hb-top"><div class="meta" id="hMeta"></div><button class="btn-ghost" type="button" id="hEdit">Düzenle</button></div>
-          <div id="hItems"></div>
-          <div class="add-row habit" id="hAddRow" style="margin-top:12px">
-            <input id="hEmoji" placeholder="🙂" maxlength="8" autocomplete="off" aria-label="Emoji (opsiyonel)">
-            <input id="hName" placeholder="Yeni alışkanlık" autocomplete="off" enterkeyhint="done" aria-label="Alışkanlık adı">
-            <button class="btn" type="button" id="hAdd" aria-label="Ekle">+</button>
-          </div>
-          <p class="error" id="listErr"></p>`;
-        $("hEdit").addEventListener("click", () => { lists.editHabits = !lists.editHabits; lists.sureDel = null; paintHabits(); });
-        $("hAdd").addEventListener("click", addHabit);
-        $("hName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addHabit(); } });
-        paintHabits();
+        $(key + "Items").innerHTML = `<div class="empty">Liste yüklenemedi.<br><small>${esc(err.message || err)}</small></div>`;
       }
     }
 
-    // --- Market ---
-    function paintGrocery() {
-      if (!$("gItems")) return;
-      const todo = lists.grocery.filter((x) => !x.done);
-      const done = lists.grocery.filter((x) => x.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+    function paintList(key) {
+      const L = LISTS[key], items = listData[key];
+      const open = items.filter((x) => !x.done);
+      const done = items.filter((x) => x.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       const row = (x) => `<li class="item${x.done ? " done" : ""}" data-id="${x.id}">
-          <button type="button" class="tick" data-act="toggle" aria-label="${x.done ? "Geri al" : "Alındı"}" aria-pressed="${x.done}">✓</button>
+          <button type="button" class="tick" data-act="toggle" aria-label="${x.done ? "Geri al" : L.tick}" aria-pressed="${x.done}">✓</button>
           <span class="nm" data-act="toggle">${esc(x.name)}</span>
           <button type="button" class="del" data-act="del" aria-label="Sil">×</button>
         </li>`;
-      let html = todo.length
-        ? `<ul class="items">${todo.map(row).join("")}</ul>`
-        : `<div class="empty" style="padding:28px 8px">${done.length ? "Hepsi sepette 🎉" : "Liste boş. Yukarıdan ekle.<br><small>Virgülle birden fazla ürün ekleyebilirsin.</small>"}</div>`;
+      let html = open.length
+        ? `<ul class="items">${open.map(row).join("")}</ul>`
+        : `<div class="empty" style="padding:28px 8px">${done.length ? L.allDone : L.empty}</div>`;
       if (done.length) {
-        html += `<div class="sub-h"><span>SEPETTE · ${done.length}</span><button type="button" id="gClear">Sepeti temizle</button></div>
+        html += `<div class="sub-h"><span>${L.doneTitle} · ${done.length}</span><button type="button" data-act="clear">${L.clearText}</button></div>
           <ul class="items">${done.map(row).join("")}</ul>`;
       }
-      $("gItems").innerHTML = html;
-      $("gItems").querySelectorAll("[data-act]").forEach((el) => el.addEventListener("click", () => {
+      const box = $(key + "Items");
+      box.innerHTML = html;
+      box.querySelectorAll("[data-act]").forEach((el) => el.addEventListener("click", () => {
+        if (el.dataset.act === "clear") return clearDone(key);
         const id = +el.closest(".item").dataset.id;
-        if (el.dataset.act === "del") delGrocery(id); else toggleGrocery(id);
+        if (el.dataset.act === "del") delItem(key, id); else toggleItem(key, id);
       }));
-      $("gClear")?.addEventListener("click", clearGrocery);
     }
 
-    async function addGrocery(input) {
-      // "süt, 6 yumurta; ekmek" → 3 ürün ("1,5 lt süt" bölünmez)
-      const names = input.value.split(/[;\n]|,(?!\d)/).map((s) => s.trim()).filter(Boolean);
+    const listErr = (key, msg) => { $(key + "Err").textContent = msg; };
+
+    async function addItems(key) {
+      const input = $(key + "In");
+      // Market: "süt, 6 yumurta; ekmek" → 3 ürün ("1,5 lt süt" bölünmez). To-do: her zaman tek madde.
+      const names = (LISTS[key].split ? input.value.split(/[;\n]|,(?!\d)/) : [input.value]).map((s) => s.trim()).filter(Boolean);
       if (!names.length) return;
       input.value = "";
-      listErr("");
+      listErr(key, "");
       const fresh = [];
       for (const name of names) {
-        const same = lists.grocery.find((x) => norm(x.name) === norm(name));
-        if (same) { if (same.done) toggleGrocery(same.id); continue; }   // sepetteyse listeye geri al
+        const same = listData[key].find((x) => norm(x.name) === norm(name));
+        if (same) { if (same.done) toggleItem(key, same.id); continue; }   // tamamlanmışsa listeye geri al
         if (!fresh.some((n) => norm(n) === norm(name))) fresh.push(name);
       }
-      if (!fresh.length) { paintGrocery(); return; }
-      const { data, error } = await sb.from("grocery_items").insert(fresh.map((name) => ({ name }))).select("*");
-      if (error) { if (!input.value) input.value = fresh.join(", "); listErr("Eklenemedi: " + error.message); return; }
-      lists.grocery.push(...data);
-      paintGrocery();
+      if (!fresh.length) return;
+      const { data, error } = await sb.from(LISTS[key].table).insert(fresh.map((name) => ({ name }))).select("*");
+      if (error) { if (!input.value) input.value = fresh.join(", "); listErr(key, "Eklenemedi: " + error.message); return; }
+      listData[key].push(...data);
+      paintList(key);
     }
 
-    async function toggleGrocery(id) {
-      const x = lists.grocery.find((i) => i.id === id);
+    async function toggleItem(key, id) {
+      const x = listData[key].find((i) => i.id === id);
       if (!x) return;
       const prev = { done: x.done, done_at: x.done_at };
       x.done = !x.done;
       x.done_at = x.done ? new Date().toISOString() : null;
-      paintGrocery();
-      const { error } = await sb.from("grocery_items").update({ done: x.done, done_at: x.done_at }).eq("id", id);
-      if (error) { Object.assign(x, prev); paintGrocery(); listErr("Kaydedilemedi: " + error.message); }
+      paintList(key);
+      const { error } = await sb.from(LISTS[key].table).update({ done: x.done, done_at: x.done_at }).eq("id", id);
+      if (error) { Object.assign(x, prev); paintList(key); listErr(key, "Kaydedilemedi: " + error.message); }
     }
 
-    async function delGrocery(id) {
-      const before = lists.grocery;
-      lists.grocery = before.filter((i) => i.id !== id);
-      paintGrocery();
-      const { error } = await sb.from("grocery_items").delete().eq("id", id);
-      if (error) { lists.grocery = before; paintGrocery(); listErr("Silinemedi: " + error.message); }
+    async function delItem(key, id) {
+      const before = listData[key];
+      listData[key] = before.filter((i) => i.id !== id);
+      paintList(key);
+      const { error } = await sb.from(LISTS[key].table).delete().eq("id", id);
+      if (error) { listData[key] = before; paintList(key); listErr(key, "Silinemedi: " + error.message); }
     }
 
-    async function clearGrocery() {
-      const before = lists.grocery;
-      lists.grocery = before.filter((i) => !i.done);
-      paintGrocery();
-      const { error } = await sb.from("grocery_items").delete().eq("done", true);
-      if (error) { lists.grocery = before; paintGrocery(); listErr("Temizlenemedi: " + error.message); }
+    async function clearDone(key) {
+      const before = listData[key];
+      listData[key] = before.filter((i) => !i.done);
+      paintList(key);
+      const { error } = await sb.from(LISTS[key].table).delete().eq("done", true);
+      if (error) { listData[key] = before; paintList(key); listErr(key, "Temizlenemedi: " + error.message); }
     }
 
-    // --- Alışkanlık ---
-    function paintHabits() {
-      if (!$("hItems")) return;
-      const t = todayStr(), H = lists.habits, edit = lists.editHabits;
-      const days = Array.from({ length: 7 }, (_, i) => addDays(t, i - 6));
-      const doneN = H.filter((h) => ckSet.has(ckKey(h.id, t))).length;
-      $("hMeta").textContent = H.length ? `Bugün · ${doneN}/${H.length} tamam` : "Alışkanlıklar";
-      $("hEdit").hidden = !H.length;
-      $("hEdit").textContent = edit ? "Bitti" : "Düzenle";
-      $("hAddRow").hidden = !(edit || !H.length);
-      if (!H.length) {
-        $("hItems").innerHTML = '<div class="empty" style="padding:22px 8px">Henüz alışkanlık yok.<br>Aşağıdan ilkini ekle: ör. 💧 2 litre su, 📚 20 dk okuma.</div>';
-        return;
-      }
-      $("hItems").innerHTML = `<ul class="items">${H.map((h) => {
-        const on = ckSet.has(ckKey(h.id, t)), s = streakOf(h.id), sure = lists.sureDel === h.id;
-        const dots = days.map((d) => `<button type="button" class="${ckSet.has(ckKey(h.id, d)) ? "on" : ""}${d === t ? " today" : ""}" data-day="${d}" aria-label="${dayLabel(d)}" title="${dayLabel(d)}"></button>`).join("");
-        return `<li class="item${on ? " on" : ""}" data-id="${h.id}">
-          ${edit ? "" : `<button type="button" class="tick" data-act="today" aria-label="Bugün yapıldı" aria-pressed="${on}">✓</button>`}
-          <div class="hb">
-            <div>${esc(habitLabel(h))}</div>
-            <div class="hb-meta"><span>${s ? `🔥 ${s} gün` : "Seri yok"}</span>${edit ? "" : `<span class="dots">${dots}</span>`}</div>
-          </div>
-          ${edit ? `<button type="button" class="del${sure ? " sure" : ""}" data-act="del" aria-label="Sil">${sure ? "Sil? Geçmişi de gider" : "×"}</button>` : ""}
-        </li>`;
-      }).join("")}</ul>
-      ${edit ? "" : '<p class="est" style="margin:10px 0 0">Unuttuğun bir günü işaretlemek için o günün noktasına dokun.</p>'}`;
-      $("hItems").querySelectorAll(".item").forEach((li) => {
-        const id = +li.dataset.id;
-        li.querySelector('[data-act="today"]')?.addEventListener("click", () => toggleHabit(id, todayStr()));
-        li.querySelectorAll(".dots button").forEach((b) => b.addEventListener("click", () => toggleHabit(id, b.dataset.day)));
-        li.querySelector('[data-act="del"]')?.addEventListener("click", () => delHabit(id));
-      });
+    for (const key of Object.keys(LISTS)) {
+      $(key + "Add").addEventListener("click", () => addItems(key));
+      $(key + "In").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addItems(key); } });
     }
-
-    async function toggleHabit(hid, date) {
-      const k = ckKey(hid, date);
-      if (pendingChecks.has(k)) return;
-      const had = ckSet.has(k);
-      const before = lists.checks;
-      lists.checks = had ? before.filter((c) => !(c.habit_id === hid && c.check_date === date)) : [...before, { habit_id: hid, check_date: date }];
-      rebuildChecks();
-      paintHabits();
-      todayHabits();
-      pendingChecks.add(k);
-      const { error } = had
-        ? await sb.from("habit_checks").delete().eq("habit_id", hid).eq("check_date", date)
-        : await sb.from("habit_checks").upsert({ habit_id: hid, check_date: date }, { onConflict: "habit_id,check_date", ignoreDuplicates: true });
-      pendingChecks.delete(k);
-      if (error) {
-        lists.checks = before; rebuildChecks(); paintHabits(); todayHabits();
-        listErr("Kaydedilemedi: " + error.message);
-      }
-    }
-
-    async function addHabit() {
-      const name = $("hName").value.trim(), emoji = $("hEmoji").value.trim() || null;
-      if (!name) { $("hName").focus(); return; }
-      listErr("");
-      $("hAdd").disabled = true;
-      const pos = lists.habits.reduce((m, h) => Math.max(m, h.position + 1), 0);
-      const { data, error } = await sb.from("habits").insert({ name, emoji, position: pos }).select("*").single();
-      $("hAdd").disabled = false;
-      if (error) { listErr("Eklenemedi: " + error.message); return; }
-      $("hName").value = "";
-      $("hEmoji").value = "";
-      lists.habits.push(data);
-      paintHabits();
-    }
-
-    let sureTimer = null;
-    async function delHabit(id) {
-      clearTimeout(sureTimer);
-      if (lists.sureDel !== id) {
-        lists.sureDel = id;
-        paintHabits();
-        sureTimer = setTimeout(() => { lists.sureDel = null; paintHabits(); }, 4000);
-        return;
-      }
-      lists.sureDel = null;
-      const { error } = await sb.from("habits").delete().eq("id", id);
-      if (error) { listErr("Silinemedi: " + error.message); paintHabits(); return; }
-      lists.habits = lists.habits.filter((h) => h.id !== id);
-      lists.checks = lists.checks.filter((c) => c.habit_id !== id);
-      rebuildChecks();
-      if (!lists.habits.length) lists.editHabits = false;
-      paintHabits();
-    }
-
-    document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "liste" && loggedIn) loadLists(); });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && LISTS[currentTab] && loggedIn) loadList(currentTab); });
 
     // ---------- Bugün ekranı ----------
     let todayTimer = null;
@@ -1753,28 +1612,19 @@
           : '<div class="tc-line muted">✅ Aksiyon gereken mail yok</div>'}`);
     }
 
-    function todayHabits() {
-      if (!lists.ready || $("tab-bugun").hidden) return;
-      const H = lists.habits, t = todayStr();
-      if (!H.length) { setCard("tHabit", '<div class="tc-line muted">Henüz alışkanlık yok. Eklemek için dokun.</div>'); return; }
-      const n = H.filter((h) => ckSet.has(ckKey(h.id, t))).length;
-      setCard("tHabit", `<div class="tc-big">${n === H.length ? "🎉 Hepsi tamam" : `${n}/${H.length} tamam`}</div>
-        <div class="chips">${H.map((h) => {
-          const on = ckSet.has(ckKey(h.id, t));
-          return `<button type="button" class="chip${on ? " on" : ""}" data-hid="${h.id}" aria-pressed="${on}">${on ? "✓ " : ""}${esc(habitLabel(h))}</button>`;
-        }).join("")}</div>`);
-      $("tHabit").querySelectorAll(".chip").forEach((b) => b.addEventListener("click", (e) => {
-        e.stopPropagation();   // karta dokunmak sekmeye götürür, çipe dokunmak sadece işaretler
-        toggleHabit(+b.dataset.hid, todayStr());
-      }));
-    }
-
-    function todayGrocery() {
-      const todo = lists.grocery.filter((x) => !x.done);
-      if (!todo.length) { setCard("tGrocery", '<div class="tc-line muted">Liste boş ✨ Eklemek için dokun.</div>'); return; }
-      const names = todo.map((x) => x.name);
-      setCard("tGrocery", `<div class="tc-big">${todo.length} ürün alınacak</div>
-        <div class="tc-line muted">${esc(names.slice(0, 6).join(", "))}${names.length > 6 ? ` +${names.length - 6}` : ""}</div>`);
+    function todayList(key) {
+      const open = listData[key].filter((x) => !x.done);
+      if (key === "market") {
+        if (!open.length) { setCard("tGrocery", '<div class="tc-line muted">Liste boş ✨ Eklemek için dokun.</div>'); return; }
+        const names = open.map((x) => x.name);
+        setCard("tGrocery", `<div class="tc-big">${open.length} ürün alınacak</div>
+          <div class="tc-line muted">${esc(names.slice(0, 6).join(", "))}${names.length > 6 ? ` +${names.length - 6}` : ""}</div>`);
+      } else {
+        if (!open.length) { setCard("tTodo", '<div class="tc-line muted">Yapılacak bir şey yok ✨ Eklemek için dokun.</div>'); return; }
+        setCard("tTodo", `<div class="tc-big">${open.length} yapılacak</div>
+          <ul class="tc-list">${open.slice(0, 3).map((x) => `<li>☐ ${esc(x.name)}</li>`).join("")}</ul>
+          ${open.length > 3 ? `<div class="tc-line muted">+${open.length - 3} tane daha</div>` : ""}`);
+      }
     }
 
     async function loadToday() {
@@ -1785,8 +1635,8 @@
       todayMail();
       const failed = (id, what) => setCard(id, `<div class="tc-line muted">${what} alınamadı. Dokunup sekmeyi aç.</div>`);
       fetchWeather().then(todayWeather).catch(() => failed("tWx", "Hava durumu"));
-      fetchLists().then(() => { todayHabits(); todayGrocery(); })
-        .catch(() => { failed("tHabit", "Alışkanlıklar"); failed("tGrocery", "Market listesi"); });
+      fetchList("todo").then(() => todayList("todo")).catch(() => failed("tTodo", "To-do listesi"));
+      fetchList("market").then(() => todayList("market")).catch(() => failed("tGrocery", "Market listesi"));
       fetchGym().then(todayGym).catch(() => failed("tGym", "Gym programı")).finally(() => {
         const [from, to] = todayRoute();
         fetchTransit(from, to).then((t) => todayTransit(t, from, to)).catch(() => failed("tTransit", "Ulaşım verisi"));
@@ -1799,7 +1649,6 @@
       card.addEventListener("click", () => {
         if (card.id === "tTransit") { [tFrom, tTo] = todayRoute(); }
         if (card.id === "tMail" && digests[0]) select(digests[0].digest_date);
-        if (card.dataset.sub) lists.sub = card.dataset.sub;
         showTab(card.dataset.goto);
         window.scrollTo(0, 0);
       });
@@ -1825,7 +1674,7 @@
     // ---------- Başlat ----------
     // Uygulama "Bugün" ile açılır; bildirimden (?d=...) gelindiyse mailler
     const qs = new URLSearchParams(location.search);
-    const TABS = ["bugun", "mail", "hava", "ulasim", "gym", "liste"];
+    const TABS = ["bugun", "mail", "hava", "ulasim", "gym", "market", "todo"];
     let startTab = TABS.includes(qs.get("tab")) ? qs.get("tab") : "bugun";
     if (qs.get("d")) startTab = "mail";
     showTab(startTab);
