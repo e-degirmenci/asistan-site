@@ -114,7 +114,7 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
@@ -124,7 +124,8 @@
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
     .tab .ti { font-size: 19px; line-height: 1.1; }
-    @media (max-width: 380px) { .tab { font-size: 11px; } .tabs { padding: 3px; } }
+    @media (max-width: 430px) { .tab { font-size: 11px; } }
+    @media (max-width: 380px) { .tab { font-size: 10px; letter-spacing: -0.01em; } .tab .ti { font-size: 18px; } .tabs { padding: 3px; } }
 
     /* Bugün */
     .hello { margin: 2px 2px 14px; }
@@ -290,6 +291,77 @@
     .sub-h { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: .02em; margin: 16px 0 2px; }
     .sub-h button { border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; padding: 0; }
 
+    /* Ders */
+    .seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+    .seg4 button {
+      font: inherit; font-size: 13px; font-weight: 600; padding: 9px 2px; border-radius: 12px; cursor: pointer; white-space: nowrap;
+      border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    }
+    .seg4 button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .cdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; vertical-align: 1px; }
+    .sub-h.first { margin-top: 2px; }
+    .wk-day { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; margin: 18px 0 2px; }
+    .wk-day:first-child { margin-top: 0; }
+    .wk-day.today { color: var(--accent); }
+    .slot { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .wk-day + .slot { border-top: 0; }
+    .slot .tm { flex: 0 0 46px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 15px; line-height: 1.25; }
+    .slot .tm span { display: block; color: var(--muted); font-weight: 500; font-size: 13px; }
+    .slot .sl-main { flex: 1; min-width: 0; }
+    .slot .sl-name { font-weight: 600; }
+    .slot .sl-sub { color: var(--muted); font-size: 14px; margin-left: 16px; }
+    .badge { font-size: 11px; font-weight: 700; color: #fff; border-radius: 6px; padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
+    .badge.now { background: #2f9e44; } .badge.next { background: var(--accent); }
+    @media (prefers-color-scheme: dark) { .badge.next { color: #0f1220; } }
+    .crs { width: 100%; display: block; text-align: left; border: 0; border-top: 1px solid var(--line); background: none; font: inherit; color: var(--text); padding: 12px 0; cursor: pointer; }
+    .sub-h + .crs { border-top: 0; }
+    .crs-top { display: flex; align-items: center; gap: 10px; }
+    .crs-top .nm { flex: 1; font-weight: 650; min-width: 0; }
+    .crs-top .chev { color: var(--muted); }
+    .crs .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0 20px; }
+    .gr { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .gr.muted { color: var(--muted); font-weight: 500; font-size: 14px; } .gr.bad { color: var(--danger); font-size: 14px; }
+    .bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 8px 0 0 20px; }
+    .bar.wide { margin-left: 0; margin-top: 6px; }
+    .bar i { display: block; height: 100%; border-radius: 99px; min-width: 0; }
+    .due { font-size: 13px; color: var(--muted); text-decoration: none; display: inline-block; }
+    .due.soon { color: #e8590c; font-weight: 650; } .due.over { color: var(--danger); font-weight: 650; }
+    .item.done .due { text-decoration: line-through; }
+    .back { border: 0; background: none; color: var(--accent); font: inherit; font-size: 15px; padding: 0; cursor: pointer; margin: 0 0 10px; }
+    .crs-info { font-size: 14px; color: var(--muted); display: grid; gap: 3px; margin: 8px 0 0; }
+    .due-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin: -2px 0 10px; font-size: 13px; color: var(--muted); }
+    .due-row input { font: inherit; font-size: 14px; padding: 7px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); width: auto; min-width: 0; }
+    .form label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin: 12px 0 5px; }
+    .form label.check { display: flex; align-items: center; gap: 10px; color: var(--text); font-size: 15px; font-weight: 500; margin-top: 14px; }
+    .form label.check input { width: 20px; height: 20px; margin: 0; }
+    .form input, .form select {
+      width: 100%; min-width: 0; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text);
+    }
+    .form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .colors { display: flex; gap: 8px; flex-wrap: wrap; }
+    .colors button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--surface); outline: 2px solid transparent; cursor: pointer; padding: 0; }
+    .colors button[aria-pressed="true"] { outline-color: var(--text); }
+    .slot-edit { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-top: 8px; display: grid; gap: 8px; }
+    .slot-edit .r { display: grid; grid-template-columns: 0.8fr 1.1fr 1.1fr; gap: 6px; }
+    .slot-edit .r2 { display: grid; grid-template-columns: 1.1fr 1fr auto; gap: 6px; }
+    .slot-edit input, .slot-edit select { padding: 9px 8px; font-size: 15px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+    .stat { background: var(--bg); border-radius: 14px; padding: 12px 14px; }
+    .stat .k { color: var(--muted); font-size: 13px; font-weight: 600; }
+    .stat .v { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .stat .s { color: var(--muted); font-size: 12px; }
+    .exam { padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .exam:first-child, .sub-h + .exam { border-top: 0; }
+    .exam-top { display: flex; gap: 10px; align-items: center; }
+    .exam-top .nm { flex: 1; font-weight: 650; }
+    .exam .cd { font-weight: 700; font-size: 15px; white-space: nowrap; color: var(--accent); }
+    .exam .sub { color: var(--muted); font-size: 14px; margin: 2px 0 0 20px; }
+    .exam .warn { color: var(--danger); font-size: 14px; margin: 6px 0 0 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .exam .ok { color: #2f9e44; font-size: 14px; margin: 4px 0 0 20px; }
+    .exam.past { opacity: .55; }
+    .mini-btn { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
+
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
       position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
@@ -337,6 +409,7 @@
         <button class="tab" role="tab" type="button" data-tab="mail" aria-selected="false"><span class="ti">📬</span>Mail</button>
         <button class="tab" role="tab" type="button" data-tab="hava" aria-selected="false"><span class="ti">🌤️</span>Hava</button>
         <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false"><span class="ti">🚇</span>Ulaşım</button>
+        <button class="tab" role="tab" type="button" data-tab="ders" aria-selected="false"><span class="ti">🎓</span>Ders</button>
         <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false"><span class="ti">🏋️</span>Gym</button>
         <button class="tab" role="tab" type="button" data-tab="market" aria-selected="false"><span class="ti">🛒</span>Market</button>
         <button class="tab" role="tab" type="button" data-tab="todo" aria-selected="false"><span class="ti">✅</span>To-do</button>
@@ -347,6 +420,7 @@
         <div class="hello"><h2 id="helloTitle"></h2><div id="helloDate" class="wx-sub"></div></div>
         <article class="card tcard" id="tWx" data-goto="hava"><div class="tc-head"><span>🌤️ Hava</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tTransit" data-goto="ulasim"><div class="tc-head"><span>🚇 Ulaşım</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
+        <article class="card tcard" id="tDers" data-goto="ders"><div class="tc-head"><span>🎓 Ders</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tTodo" data-goto="todo"><div class="tc-head"><span>✅ To-do</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tGym" data-goto="gym"><div class="tc-head"><span>🏋️ Gym</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tMail" data-goto="mail"><div class="tc-head"><span>📬 Mail</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
@@ -388,6 +462,17 @@
         <div class="gym-info" id="gymInfo" hidden></div>
         <nav class="days" id="gymDays" aria-label="Program günleri"></nav>
         <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
+      </div>
+
+      <!-- Sekme: Ders -->
+      <div id="tab-ders" role="tabpanel" hidden>
+        <div class="seg4" id="dersSeg">
+          <button type="button" data-sub="program" aria-pressed="true">📅 Program</button>
+          <button type="button" data-sub="dersler" aria-pressed="false">📚 Dersler</button>
+          <button type="button" data-sub="sinav" aria-pressed="false">📝 Sınavlar</button>
+          <button type="button" data-sub="notlar" aria-pressed="false">🎓 Notlar</button>
+        </div>
+        <article class="card" id="dersCard" style="padding-bottom:16px"><div class="empty">Yükleniyor…</div></article>
       </div>
 
       <!-- Sekme: Market -->
@@ -469,6 +554,7 @@
       if (currentTab === "gym") loadGym();
       if (currentTab === "hava") loadWeather();
       if (LISTS[currentTab]) loadList(currentTab);
+      if (currentTab === "ders") loadDers();
       await loadDigests();
       if (currentTab === "bugun") loadToday();
       await refreshNotice();
@@ -638,6 +724,7 @@
       $("tab-hava").hidden = name !== "hava";
       $("tab-ulasim").hidden = name !== "ulasim";
       $("tab-gym").hidden = name !== "gym";
+      $("tab-ders").hidden = name !== "ders";
       $("tab-market").hidden = name !== "market";
       $("tab-todo").hidden = name !== "todo";
       currentTab = name;
@@ -648,6 +735,7 @@
       if (name === "ulasim") loadTransit();
       if (name === "gym" && !gym.editing) loadGym();
       if (LISTS[name]) loadList(name);
+      if (name === "ders") loadDers();
     }
     for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -1523,6 +1611,520 @@
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && LISTS[currentTab] && loggedIn) loadList(currentTab); });
 
+    // ---------- Ders: haftalık program, görevler/ilerleme, sınavlar, notlar (Supabase'de saklanır) ----------
+    const COLORS = ["#3b5bdb", "#e8590c", "#2f9e44", "#c2255c", "#7048e8", "#1098ad", "#f08c00", "#868e96"];
+    const KINDS = ["Vorlesung", "Übung", "Tutorium", "Seminer", "Diğer"];
+    const ders = { sub: "program", view: null, sure: null, busy: false, ready: false, courses: [], slots: [], tasks: [], exams: [] };
+    const DAY = 86400000;
+
+    function currentSemester() {
+      const d = new Date(), y = d.getFullYear() % 100, m = d.getMonth() + 1;
+      if (m >= 10) return `WiSe ${y}/${y + 1}`;
+      if (m <= 3) return `WiSe ${y - 1}/${y}`;
+      return `SoSe ${y}`;
+    }
+    function semKey(s) {
+      const t = String(s || "");
+      let m = t.match(/(wise|ws)\s*(\d{2})/i);
+      if (m) return 2000 + +m[2] + 0.5;
+      m = t.match(/(sose|ss)\s*(\d{2})/i);
+      return m ? 2000 + +m[2] : 0;
+    }
+    const courseOf = (id) => ders.courses.find((c) => c.id === id);
+    const cname = (c) => (c ? c.short || c.name : "?");
+    const dot = (c) => `<span class="cdot" style="background:${esc(c?.color || COLORS[7])}"></span>`;
+    const berlinDay = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(t);
+    const dayDiff = (iso) => Math.round((new Date(berlinDay(new Date(iso))) - new Date(berlinDay(new Date()))) / DAY);
+    const relDay = (iso) => { const n = dayDiff(iso); return n < 0 ? `${-n} gün geçti` : n === 0 ? "bugün" : n === 1 ? "yarın" : `${n} gün`; };
+    const fmtDate = (iso, withTime = true) => new Date(iso).toLocaleString("tr-TR", { weekday: "short", day: "numeric", month: "short", ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}), timeZone: "Europe/Berlin" });
+    const dueClass = (iso) => (new Date(iso) < new Date() ? "over" : dayDiff(iso) <= 2 ? "soon" : "");
+    const fmtNum = (x) => String(+x).replace(".", ",");
+    const fmtGrade = (g) => (g == null ? "" : Number(g).toFixed(1).replace(".", ","));
+    const t5 = (t) => (t || "").slice(0, 5);
+    const hhmmNow = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
+    const dateOnly = (d) => d + "T12:00:00";   // "2026-11-20" gibi tarihleri gün hesabına sokmak için
+    // Tarih + saat kutuları telefonun saatine göre yorumlanır (telefon Münih saatinde)
+    const localIso = (d, t) => new Date(`${d}T${t || "23:59"}`).toISOString();
+    const isoParts = (iso) => {
+      if (!iso) return ["", ""];
+      const d = new Date(iso);
+      return [berlinDay(d), d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })];
+    };
+    const slotSort = (a, b) => a.weekday - b.weekday || (t5(a.start_time) > t5(b.start_time) ? 1 : -1);
+    const dueVal = (t) => (t.due_at ? Date.parse(t.due_at) : 9e15);
+    const byDue = (a, b) => dueVal(a) - dueVal(b) || a.id - b.id;
+    const activeIds = () => new Set(ders.courses.filter((c) => c.status === "aktif").map((c) => c.id));
+    const dersErr = (msg) => { const e = $("dersErr"); if (e) e.textContent = msg; return false; };
+
+    async function fetchDers() {
+      const [c, s, t, e] = await Promise.all([
+        sb.from("courses").select("*").order("position").order("id"),
+        sb.from("course_slots").select("*").order("weekday").order("start_time"),
+        sb.from("course_tasks").select("*").order("created_at").order("id"),
+        sb.from("exams").select("*").order("exam_at"),
+      ]);
+      const err = c.error || s.error || t.error || e.error;
+      if (err) throw err;
+      Object.assign(ders, { courses: c.data, slots: s.data, tasks: t.data, exams: e.data, ready: true });
+    }
+
+    async function loadDers() {
+      if (!ders.ready) $("dersCard").innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        await fetchDers();
+      } catch (err) {
+        $("dersCard").innerHTML = `<div class="empty">Ders bilgileri yüklenemedi.<br><small>${esc(err.message || err)}</small></div>`;
+        return;
+      }
+      // Bir form açıksa ya da bir şey yazıyorsan ekranı yenileme (yazdıkların silinmesin)
+      const typing = $("dersCard").contains(document.activeElement) && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+      if (!["edit", "exam"].includes(ders.view?.type) && !typing) renderDers();
+    }
+
+    for (const b of $("dersSeg").children) b.addEventListener("click", () => {
+      ders.sub = b.dataset.sub;
+      ders.view = null;
+      ders.sure = null;
+      renderDers();
+    });
+
+    function renderDers() {
+      for (const b of $("dersSeg").children) b.setAttribute("aria-pressed", String(b.dataset.sub === ders.sub));
+      if (!ders.ready) return;
+      const v = ders.view;
+      if (v?.type === "course") return renderCourse(v.id);
+      if (v?.type === "edit") return renderCourseEdit();
+      if (v?.type === "exam") return renderExamEdit();
+      ({ program: renderProgram, dersler: renderCourses, sinav: renderExams, notlar: renderGrades })[ders.sub]();
+    }
+
+    const taskRow = (t, showCourse) => {
+      const c = courseOf(t.course_id);
+      const due = t.due_at ? `<span class="due ${t.done ? "" : dueClass(t.due_at)}">${fmtDate(t.due_at)} · ${relDay(t.due_at)}</span>` : "";
+      return `<li class="item${t.done ? " done" : ""}">
+          <button type="button" class="tick" data-act="toggle-task" data-id="${t.id}" aria-pressed="${t.done}" aria-label="${t.done ? "Geri al" : "Tamamlandı"}">✓</button>
+          <span class="nm" data-act="toggle-task" data-id="${t.id}">${esc(t.title)}${showCourse ? ` <span class="est">· ${dot(c)} ${esc(cname(c))}</span>` : ""}${due ? "<br>" + due : ""}</span>
+          <button type="button" class="del" data-act="del-task" data-id="${t.id}" aria-label="Sil">×</button>
+        </li>`;
+    };
+
+    // --- Program ---
+    function renderProgram() {
+      const active = activeIds();
+      const slots = ders.slots.filter((s) => active.has(s.course_id)).sort(slotSort);
+      if (!slots.length) {
+        $("dersCard").innerHTML = `<div class="empty" style="padding:28px 8px">Henüz ders programı yok.<br>${active.size ? "Derslerine saat eklemek için Dersler'den bir derse girip Düzenle'ye dokun." : "Bu dönem aldığın dersleri ve saatlerini ekle."}</div>
+          <button class="btn" type="button" data-act="new-course" style="width:100%">+ Ders ekle</button>`;
+        return;
+      }
+      const tw = todayWd(), nowT = hhmmNow();
+      const days = [...new Set(slots.map((s) => s.weekday))];
+      const order = [...days.filter((d) => d >= tw), ...days.filter((d) => d < tw)];   // bugünden başlayarak
+      let nextMarked = false;
+      $("dersCard").innerHTML = order.map((d) => {
+        const label = d === tw ? "Bugün · " : d === (tw % 7) + 1 ? "Yarın · " : "";
+        return `<div class="wk-day${d === tw ? " today" : ""}">${label}${WD[d]}</div>` + slots.filter((s) => s.weekday === d).map((s) => {
+          const c = courseOf(s.course_id);
+          let badge = "";
+          if (d === tw) {
+            if (t5(s.start_time) <= nowT && nowT < t5(s.end_time || "23:59")) badge = '<span class="badge now">şimdi</span>';
+            else if (!nextMarked && t5(s.start_time) > nowT) { badge = '<span class="badge next">sıradaki</span>'; nextMarked = true; }
+          }
+          return `<div class="slot" data-act="open-course" data-id="${c.id}">
+              <div class="tm">${t5(s.start_time)}${s.end_time ? `<span>${t5(s.end_time)}</span>` : ""}</div>
+              <div class="sl-main"><div class="sl-name">${dot(c)} ${esc(c.name)}${badge}</div><div class="sl-sub">${[s.kind, s.room].filter(Boolean).map(esc).join(" · ")}</div></div>
+            </div>`;
+        }).join("");
+      }).join("") + '<p class="est" style="margin:14px 0 0">Saatleri değiştirmek için derse dokun → Düzenle.</p>';
+    }
+
+    // --- Dersler (aktif dersler + yaklaşan teslimler) ---
+    function renderCourses() {
+      const active = ders.courses.filter((c) => c.status === "aktif");
+      const ids = activeIds();
+      const upcoming = ders.tasks.filter((t) => !t.done && t.due_at && ids.has(t.course_id)).sort(byDue).slice(0, 6);
+      let html = "";
+      if (upcoming.length) html += `<div class="sub-h first"><span>YAKLAŞAN TESLİMLER</span></div><ul class="items">${upcoming.map((t) => taskRow(t, true)).join("")}</ul>`;
+      html += `<div class="sub-h${upcoming.length ? "" : " first"}"><span>BU DÖNEM · ${active.length} DERS</span></div>`;
+      html += active.length ? active.map((c) => {
+        const ts = ders.tasks.filter((t) => t.course_id === c.id), done = ts.filter((t) => t.done).length;
+        const pct = ts.length ? Math.round((done / ts.length) * 100) : 0;
+        const next = ts.filter((t) => !t.done && t.due_at).sort(byDue)[0];
+        const sub = [c.ects ? fmtNum(c.ects) + " ECTS" : "", ts.length ? `${done}/${ts.length} görev` : "görev yok", next ? `sıradaki teslim ${relDay(next.due_at)}` : ""].filter(Boolean).join(" · ");
+        return `<button type="button" class="crs" data-act="open-course" data-id="${c.id}">
+            <div class="crs-top">${dot(c)}<span class="nm">${esc(c.name)}</span><span class="chev">›</span></div>
+            <div class="sub">${sub}</div>
+            ${ts.length ? `<div class="bar"><i style="width:${pct}%;background:${esc(c.color || COLORS[0])}"></i></div>` : ""}
+          </button>`;
+      }).join("") : '<div class="empty" style="padding:24px 8px">Henüz ders yok. Bu dönem aldığın dersleri ekle.</div>';
+      html += `<button class="btn" type="button" data-act="new-course" style="width:100%;margin-top:14px">+ Ders ekle</button><p class="error" id="dersErr"></p>`;
+      $("dersCard").innerHTML = html;
+    }
+
+    // --- Ders detayı: görevler ve ilerleme ---
+    function renderCourse(id) {
+      const c = courseOf(id);
+      if (!c) { ders.view = null; return renderDers(); }
+      const tasks = ders.tasks.filter((t) => t.course_id === id);
+      const open = tasks.filter((t) => !t.done).sort(byDue);
+      const done = tasks.filter((t) => t.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+      const slots = ders.slots.filter((s) => s.course_id === id).sort(slotSort);
+      const exams = ders.exams.filter((e) => e.course_id === id && new Date(e.exam_at) > Date.now() - DAY);
+      const pct = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
+      const backTo = { program: "Program", dersler: "Dersler", sinav: "Sınavlar", notlar: "Notlar" }[ders.sub];
+      const status = c.status === "gecti" ? `Geçti${c.grade != null ? " · " + fmtGrade(c.grade) : ""}` : c.status === "kaldi" ? "Kaldı" : "";
+      $("dersCard").innerHTML = `
+        <button type="button" class="back" data-act="back">‹ ${backTo}</button>
+        <div class="gym-head">
+          <div><div class="meta">${[c.ects ? fmtNum(c.ects) + " ECTS" : "", c.semester, status].filter(Boolean).map(esc).join(" · ") || "Ders"}</div>
+          <h1>${dot(c)} ${esc(c.name)}</h1></div>
+          <button class="btn-ghost" type="button" data-act="edit-course" data-id="${id}">Düzenle</button>
+        </div>
+        ${slots.length ? `<div class="crs-info">${slots.map((s) => `<div>🕒 ${WDS[s.weekday]} ${t5(s.start_time)}${s.end_time ? "–" + t5(s.end_time) : ""}${s.kind ? " · " + esc(s.kind) : ""}${s.room ? " · " + esc(s.room) : ""}</div>`).join("")}</div>` : ""}
+        ${exams.length ? `<div class="crs-info">${exams.map((e) => `<div>📅 Sınav: ${fmtDate(e.exam_at)} · ${relDay(e.exam_at)}</div>`).join("")}</div>` : ""}
+        <div class="sub-h"><span>İLERLEME · ${done.length}/${tasks.length} GÖREV</span><span>%${pct}</span></div>
+        <div class="bar wide"><i style="width:${pct}%;background:${esc(c.color || COLORS[0])}"></i></div>
+        <div class="add-row" style="margin-top:14px">
+          <input id="taskIn" placeholder="Görev ekle (ör. Übungsblatt 4)" autocomplete="off" enterkeyhint="done" aria-label="Görev">
+          <button class="btn" type="button" data-act="add-task" aria-label="Ekle">+</button>
+        </div>
+        <div class="due-row"><span>Teslim (ops.)</span><input type="date" id="taskDate" aria-label="Teslim günü"><input type="time" id="taskTime" aria-label="Teslim saati"></div>
+        ${open.length ? `<ul class="items">${open.map((t) => taskRow(t, false)).join("")}</ul>`
+          : `<div class="empty" style="padding:20px 8px">${tasks.length ? "Hepsi bitti 🎉" : "Henüz görev yok.<br><small>Übungsblätter, tekrar edeceğin konular, okumalar…</small>"}</div>`}
+        ${done.length ? `<div class="sub-h"><span>TAMAMLANDI · ${done.length}</span></div><ul class="items">${done.map((t) => taskRow(t, false)).join("")}</ul>` : ""}
+        <p class="error" id="dersErr"></p>`;
+      $("taskIn").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTask(id); } });
+    }
+
+    async function addTask(courseId) {
+      const title = $("taskIn").value.trim(), d = $("taskDate").value, t = $("taskTime").value;
+      if (!title) { $("taskIn").focus(); return; }
+      const { data, error } = await sb.from("course_tasks").insert({ course_id: courseId, title, due_at: d ? localIso(d, t) : null }).select("*").single();
+      if (error) return dersErr("Eklenemedi: " + error.message);
+      ders.tasks.push(data);
+      renderDers();
+      $("taskIn")?.focus();
+    }
+
+    async function toggleTask(id) {
+      const t = ders.tasks.find((x) => x.id === id);
+      if (!t) return;
+      const prev = { done: t.done, done_at: t.done_at };
+      t.done = !t.done;
+      t.done_at = t.done ? new Date().toISOString() : null;
+      renderDers();
+      const { error } = await sb.from("course_tasks").update({ done: t.done, done_at: t.done_at }).eq("id", id);
+      if (error) { Object.assign(t, prev); renderDers(); dersErr("Kaydedilemedi: " + error.message); }
+    }
+
+    async function delTask(id) {
+      const before = ders.tasks;
+      ders.tasks = before.filter((x) => x.id !== id);
+      renderDers();
+      const { error } = await sb.from("course_tasks").delete().eq("id", id);
+      if (error) { ders.tasks = before; renderDers(); dersErr("Silinemedi: " + error.message); }
+    }
+
+    // --- Ders ekle / düzenle ---
+    const opt = (v, label, sel) => `<option value="${esc(v)}"${String(sel ?? "") === String(v) ? " selected" : ""}>${esc(label)}</option>`;
+
+    function openCourseEditor(c, status) {
+      const used = new Set(ders.courses.map((x) => x.color));
+      ders.view = {
+        type: "edit", back: ders.view,
+        draft: c
+          ? { id: c.id, name: c.name, short: c.short || "", color: c.color || COLORS[0], ects: c.ects != null ? fmtNum(c.ects) : "", semester: c.semester || "", status: c.status, grade: c.grade != null ? fmtGrade(c.grade) : "",
+              slots: ders.slots.filter((s) => s.course_id === c.id).sort(slotSort).map((s) => ({ ...s, start_time: t5(s.start_time), end_time: t5(s.end_time) })) }
+          : { id: null, name: "", short: "", color: COLORS.find((x) => !used.has(x)) || COLORS[0], ects: "", semester: status === "gecti" ? "" : currentSemester(), status: status || "aktif", grade: "",
+              slots: status === "gecti" ? [] : [{ weekday: 1, start_time: "", end_time: "", kind: "Vorlesung", room: "" }] },
+      };
+      ders.sure = null;
+      renderDers();
+      window.scrollTo(0, 0);
+    }
+
+    function renderCourseEdit() {
+      const d = ders.view.draft;
+      $("dersCard").innerHTML = `<div class="form">
+        <button type="button" class="back" data-act="cancel">‹ Vazgeç</button>
+        <div class="meta">${d.id ? "Dersi düzenle" : d.status === "gecti" ? "Geçmiş ders ekle" : "Yeni ders"}</div>
+        <label>Ders adı</label><input data-f="name" value="${esc(d.name)}" placeholder="ör. Rechnernetze" autocomplete="off">
+        <div class="row2">
+          <div><label>Kısa ad (opsiyonel)</label><input data-f="short" value="${esc(d.short)}" placeholder="ör. RN" maxlength="12" autocomplete="off"></div>
+          <div><label>ECTS</label><input data-f="ects" inputmode="decimal" value="${esc(d.ects)}" placeholder="ör. 6"></div>
+        </div>
+        <label>Renk</label>
+        <div class="colors">${COLORS.map((c) => `<button type="button" data-act="color" data-color="${c}" style="background:${c}" aria-pressed="${d.color === c}" aria-label="Renk"></button>`).join("")}</div>
+        <div class="row2">
+          <div><label>Dönem</label><input data-f="semester" value="${esc(d.semester)}" placeholder="ör. WiSe 26/27" autocomplete="off"></div>
+          <div><label>Durum</label><select data-f="status">${opt("aktif", "Devam ediyor", d.status)}${opt("gecti", "Geçti", d.status)}${opt("kaldi", "Kaldı", d.status)}</select></div>
+        </div>
+        <div data-show="gecti"${d.status === "gecti" ? "" : " hidden"}><label>Not (boş bırakırsan notsuz / bestanden)</label><input data-f="grade" inputmode="decimal" value="${esc(d.grade)}" placeholder="ör. 1,7"></div>
+        <div data-show="aktif"${d.status === "aktif" ? "" : " hidden"}>
+          <label>Ders saatleri</label>
+          ${d.slots.map((s, i) => `<div class="slot-edit">
+              <div class="r">
+                <select data-s="weekday" data-i="${i}" aria-label="Gün">${WDS.slice(1).map((w, k) => opt(k + 1, w, s.weekday)).join("")}</select>
+                <input type="time" data-s="start_time" data-i="${i}" value="${esc(s.start_time)}" aria-label="Başlangıç">
+                <input type="time" data-s="end_time" data-i="${i}" value="${esc(s.end_time)}" aria-label="Bitiş">
+              </div>
+              <div class="r2">
+                <select data-s="kind" data-i="${i}" aria-label="Tür">${KINDS.map((k) => opt(k, k, s.kind)).join("")}</select>
+                <input data-s="room" data-i="${i}" value="${esc(s.room)}" placeholder="Salon" autocomplete="off" aria-label="Salon">
+                <button type="button" class="btn-ghost danger" data-act="del-slot" data-i="${i}">Sil</button>
+              </div>
+            </div>`).join("")}
+          <button type="button" class="btn-ghost" data-act="add-slot" style="width:100%;margin-top:8px">+ Saat ekle</button>
+        </div>
+        <div class="gym-actions">
+          <button class="btn" type="button" data-act="save-course">Kaydet</button>
+          <button class="btn-ghost" type="button" data-act="cancel">Vazgeç</button>
+        </div>
+        ${d.id ? `<button class="btn-ghost danger" type="button" data-act="del-course" style="width:100%">${ders.sure === "course" ? "Emin misin? Görevleri ve sınavları da silinir" : "Bu dersi sil"}</button>` : ""}
+        <p class="error" id="dersErr"></p>
+      </div>`;
+      $("dersCard").querySelector('[data-f="status"]').addEventListener("change", (e) => {
+        for (const el of $("dersCard").querySelectorAll("[data-show]")) el.hidden = el.dataset.show !== e.target.value;
+      });
+    }
+
+    // Formdaki değerleri taslağa al (yeniden çizmeden önce, yazılanlar kaybolmasın)
+    function syncDraft() {
+      const d = ders.view?.draft;
+      if (!d) return;
+      $("dersCard").querySelectorAll("[data-f]").forEach((el) => { d[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value; });
+      $("dersCard").querySelectorAll("[data-s]").forEach((el) => { d.slots[+el.dataset.i][el.dataset.s] = el.dataset.s === "weekday" ? +el.value : el.value; });
+    }
+
+    async function saveCourse() {
+      if (ders.busy) return;
+      syncDraft();
+      const d = ders.view.draft, name = d.name.trim();
+      if (!name) return dersErr("Ders adı boş olamaz.");
+      const ects = num(d.ects), grade = d.status === "gecti" ? num(d.grade) : null;
+      if (String(d.ects).trim() && ects == null) return dersErr("ECTS bir sayı olmalı.");
+      if (String(d.grade).trim() && d.status === "gecti" && (grade == null || grade < 1 || grade > 5)) return dersErr("Not 1,0 ile 5,0 arasında olmalı.");
+      const row = { name, short: d.short.trim() || null, color: d.color, ects, semester: d.semester.trim() || null, status: d.status, grade };
+      ders.busy = true;
+      try {
+        let id = d.id;
+        if (id) {
+          const { error } = await sb.from("courses").update(row).eq("id", id);
+          if (error) throw error;
+        } else {
+          const { data, error } = await sb.from("courses").insert({ ...row, position: ders.courses.length }).select("id").single();
+          if (error) throw error;
+          id = data.id;
+        }
+        const slots = d.slots.filter((s) => s.start_time).map((s) => ({
+          ...(s.id ? { id: s.id } : {}), course_id: id, weekday: +s.weekday, start_time: s.start_time,
+          end_time: s.end_time || null, kind: s.kind || null, room: (s.room || "").trim() || null,
+        }));
+        const keep = slots.filter((s) => s.id).map((s) => s.id);
+        const removed = ders.slots.filter((s) => s.course_id === id && !keep.includes(s.id)).map((s) => s.id);
+        if (removed.length) { const { error } = await sb.from("course_slots").delete().in("id", removed); if (error) throw error; }
+        const existing = slots.filter((s) => s.id), fresh = slots.filter((s) => !s.id);
+        if (existing.length) { const { error } = await sb.from("course_slots").upsert(existing); if (error) throw error; }
+        if (fresh.length) { const { error } = await sb.from("course_slots").insert(fresh); if (error) throw error; }
+        await fetchDers();
+        ders.view = d.status === "aktif" || ders.view.back?.type === "course" ? { type: "course", id } : null;
+        renderDers();
+        window.scrollTo(0, 0);
+      } catch (err) {
+        dersErr("Kaydedilemedi: " + (err.message || err));
+      } finally {
+        ders.busy = false;
+      }
+    }
+
+    async function deleteCourse() {
+      const d = ders.view.draft;
+      if (ders.sure !== "course") { syncDraft(); ders.sure = "course"; renderCourseEdit(); return; }
+      ders.sure = null;
+      const { error } = await sb.from("courses").delete().eq("id", d.id);
+      if (error) return dersErr("Silinemedi: " + error.message);
+      ders.view = null;
+      await fetchDers();
+      renderDers();
+    }
+
+    // --- Sınavlar ---
+    function renderExams() {
+      const now = Date.now();
+      const list = [...ders.exams].sort((a, b) => new Date(a.exam_at) - new Date(b.exam_at));
+      const up = list.filter((e) => new Date(e.exam_at).getTime() > now - 3 * 3600000);
+      const past = list.filter((e) => !up.includes(e)).reverse();
+      const row = (e, isPast) => {
+        const c = courseOf(e.course_id), n = dayDiff(e.exam_at);
+        let reg = "";
+        if (!isPast && e.registered) reg = '<div class="ok">✓ Sınava kayıtlısın</div>';
+        else if (!isPast && e.register_by) {
+          const rn = dayDiff(dateOnly(e.register_by));
+          reg = `<div class="warn">${rn < 0 ? "⚠️ Kayıt süresi geçti" : `⚠️ Kayıt son gün: ${fmtDate(dateOnly(e.register_by), false)} (${relDay(dateOnly(e.register_by))})`}
+            <button type="button" class="mini-btn" data-act="reg-exam" data-id="${e.id}">Kayıt oldum</button></div>`;
+        }
+        return `<div class="exam${isPast ? " past" : ""}" data-act="edit-exam" data-id="${e.id}">
+            <div class="exam-top">${dot(c)}<span class="nm">${esc(c?.name || "?")}</span><span class="cd">${isPast ? "" : n <= 0 ? "Bugün" : n === 1 ? "Yarın" : `${n} gün`}</span></div>
+            <div class="sub">${fmtDate(e.exam_at)}${e.room ? " · " + esc(e.room) : ""}${e.note ? " · " + esc(e.note) : ""}</div>
+            ${reg}
+          </div>`;
+      };
+      $("dersCard").innerHTML = (up.length ? up.map((e) => row(e, false)).join("") : '<div class="empty" style="padding:24px 8px">Yaklaşan sınav yok.</div>')
+        + (past.length ? `<div class="sub-h"><span>GEÇMİŞ SINAVLAR</span></div>${past.map((e) => row(e, true)).join("")}` : "")
+        + `<button class="btn" type="button" data-act="new-exam" style="width:100%;margin-top:14px">+ Sınav ekle</button>
+           <p class="est" style="margin:10px 0 0">Düzenlemek için sınava dokun.</p><p class="error" id="dersErr"></p>`;
+    }
+
+    function openExamEditor(e) {
+      const firstActive = ders.courses.find((c) => c.status === "aktif") || ders.courses[0];
+      const [date, time] = isoParts(e?.exam_at);
+      ders.view = {
+        type: "exam", back: ders.view,
+        draft: e
+          ? { id: e.id, course_id: e.course_id, date, time, room: e.room || "", register_by: e.register_by || "", registered: e.registered, note: e.note || "" }
+          : { id: null, course_id: firstActive?.id ?? "", date: "", time: "09:00", room: "", register_by: "", registered: false, note: "" },
+      };
+      ders.sure = null;
+      renderDers();
+      window.scrollTo(0, 0);
+    }
+
+    function renderExamEdit() {
+      const d = ders.view.draft;
+      if (!ders.courses.length) {
+        $("dersCard").innerHTML = `<button type="button" class="back" data-act="cancel">‹ Geri</button>
+          <div class="empty">Sınav eklemek için önce bir ders ekle.</div>
+          <button class="btn" type="button" data-act="new-course" style="width:100%">+ Ders ekle</button>`;
+        return;
+      }
+      const sorted = [...ders.courses].sort((a, b) => (a.status === "aktif" ? 0 : 1) - (b.status === "aktif" ? 0 : 1));
+      $("dersCard").innerHTML = `<div class="form">
+        <button type="button" class="back" data-act="cancel">‹ Vazgeç</button>
+        <div class="meta">${d.id ? "Sınavı düzenle" : "Yeni sınav"}</div>
+        <label>Ders</label><select data-f="course_id">${sorted.map((c) => opt(c.id, c.name, d.course_id)).join("")}</select>
+        <div class="row2">
+          <div><label>Tarih</label><input type="date" data-f="date" value="${esc(d.date)}"></div>
+          <div><label>Saat</label><input type="time" data-f="time" value="${esc(d.time)}"></div>
+        </div>
+        <label>Salon (opsiyonel)</label><input data-f="room" value="${esc(d.room)}" placeholder="ör. Audimax" autocomplete="off">
+        <label>Kayıt (Anmeldung) son günü (opsiyonel)</label><input type="date" data-f="register_by" value="${esc(d.register_by)}">
+        <label class="check"><input type="checkbox" data-f="registered"${d.registered ? " checked" : ""}> Sınava kayıt oldum</label>
+        <label>Not (opsiyonel)</label><input data-f="note" value="${esc(d.note)}" placeholder="ör. Hilfsmittel: 1 A4 sayfa" autocomplete="off">
+        <div class="gym-actions">
+          <button class="btn" type="button" data-act="save-exam">Kaydet</button>
+          <button class="btn-ghost" type="button" data-act="cancel">Vazgeç</button>
+        </div>
+        ${d.id ? `<button class="btn-ghost danger" type="button" data-act="del-exam" style="width:100%">${ders.sure === "exam" ? "Emin misin? Silmek için tekrar dokun" : "Bu sınavı sil"}</button>` : ""}
+        <p class="error" id="dersErr"></p>
+      </div>`;
+    }
+
+    async function saveExam() {
+      if (ders.busy) return;
+      syncDraft();
+      const d = ders.view.draft;
+      if (!d.course_id) return dersErr("Bir ders seç.");
+      if (!d.date) return dersErr("Sınav tarihini gir.");
+      const row = { course_id: +d.course_id, exam_at: localIso(d.date, d.time || "09:00"), room: d.room.trim() || null, register_by: d.register_by || null, registered: !!d.registered, note: d.note.trim() || null };
+      ders.busy = true;
+      const { error } = d.id ? await sb.from("exams").update(row).eq("id", d.id) : await sb.from("exams").insert(row);
+      ders.busy = false;
+      if (error) return dersErr("Kaydedilemedi: " + error.message);
+      ders.view = ders.view.back || null;
+      await fetchDers();
+      renderDers();
+    }
+
+    async function deleteExam() {
+      if (ders.sure !== "exam") { syncDraft(); ders.sure = "exam"; renderExamEdit(); return; }
+      ders.sure = null;
+      const { error } = await sb.from("exams").delete().eq("id", ders.view.draft.id);
+      if (error) return dersErr("Silinemedi: " + error.message);
+      ders.view = ders.view.back || null;
+      await fetchDers();
+      renderDers();
+    }
+
+    async function markRegistered(id) {
+      const e = ders.exams.find((x) => x.id === id);
+      if (!e) return;
+      e.registered = true;
+      renderDers();
+      const { error } = await sb.from("exams").update({ registered: true }).eq("id", id);
+      if (error) { e.registered = false; renderDers(); dersErr("Kaydedilemedi: " + error.message); }
+    }
+
+    // --- Notlar ve ECTS ---
+    function renderGrades() {
+      const C = ders.courses;
+      const passed = C.filter((c) => c.status === "gecti");
+      const graded = passed.filter((c) => c.grade != null && +c.ects > 0);
+      const sum = (a, f) => a.reduce((s, x) => s + f(x), 0);
+      const ectsDone = sum(passed, (c) => +c.ects || 0), ectsNow = sum(C.filter((c) => c.status === "aktif"), (c) => +c.ects || 0);
+      const w = sum(graded, (c) => +c.ects);
+      const avg = w ? sum(graded, (c) => c.grade * c.ects) / w : null;
+      // Not ortalaması Almanya'da genelde virgülden sonra tek haneye yuvarlanmadan kesilir
+      const avgShow = avg == null ? "–" : (Math.floor(avg * 10 + 1e-9) / 10).toFixed(1).replace(".", ",");
+      const groups = new Map();
+      for (const c of [...C].sort((a, b) => semKey(b.semester) - semKey(a.semester) || a.position - b.position)) {
+        const k = c.semester || "Dönem belirtilmemiş";
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(c);
+      }
+      const right = (c) => c.status === "aktif" ? '<span class="gr muted">devam ediyor</span>'
+        : c.status === "kaldi" ? '<span class="gr bad">kaldı</span>'
+        : c.grade != null ? `<span class="gr">${fmtGrade(c.grade)}</span>` : '<span class="gr muted">bestanden</span>';
+      $("dersCard").innerHTML = `
+        <div class="stats">
+          <div class="stat"><div class="k">Toplam ECTS</div><div class="v">${fmtNum(ectsDone)}</div><div class="s">${ectsNow ? `+${fmtNum(ectsNow)} devam eden` : `${passed.length} ders geçildi`}</div></div>
+          <div class="stat"><div class="k">Not ortalaması</div><div class="v">${avgShow}</div><div class="s">${avg == null ? "notlu ders yok" : `${graded.length} notlu ders · ${avg.toFixed(2).replace(".", ",")}`}</div></div>
+        </div>
+        ${C.length ? [...groups].map(([sem, list]) => `<div class="sub-h"><span>${esc(sem)}</span><span>${((e) => (e ? fmtNum(e) + " ECTS" : ""))(sum(list.filter((c) => c.status === "gecti"), (c) => +c.ects || 0))}</span></div>
+          ${list.map((c) => `<button type="button" class="crs" data-act="edit-course" data-id="${c.id}">
+              <div class="crs-top">${dot(c)}<span class="nm">${esc(c.name)}</span>${right(c)}</div>
+              <div class="sub">${c.ects ? fmtNum(c.ects) + " ECTS" : "ECTS girilmemiş"}</div>
+            </button>`).join("")}`).join("")
+          : '<div class="empty" style="padding:24px 8px">Henüz ders yok.<br><small>Geçtiğin dersleri notlarıyla ekle; ECTS toplamın ve ortalaman otomatik hesaplanır.</small></div>'}
+        <button class="btn" type="button" data-act="new-course" data-status="gecti" style="width:100%;margin-top:14px">+ Geçmiş ders ekle</button>
+        <p class="est" style="margin:10px 0 0">Bir ders bitince derse dokun, durumunu “Geçti” yapıp notunu gir.</p>
+        <p class="error" id="dersErr"></p>`;
+    }
+
+    // Tek tıklama dinleyicisi: kart içindeki tüm butonlar data-act ile buraya gelir
+    $("dersCard").addEventListener("click", (ev) => {
+      const el = ev.target.closest("[data-act]");
+      if (!el || !$("dersCard").contains(el)) return;
+      const act = el.dataset.act, id = +el.dataset.id;
+      if (!["del-course", "del-exam"].includes(act) && ders.sure) ders.sure = null;
+      switch (act) {
+        case "open-course": ders.view = { type: "course", id }; renderDers(); window.scrollTo(0, 0); break;
+        case "back": ders.view = null; renderDers(); break;
+        case "new-course": openCourseEditor(null, el.dataset.status); break;
+        case "edit-course": openCourseEditor(courseOf(id)); break;
+        case "color": syncDraft(); ders.view.draft.color = el.dataset.color; renderCourseEdit(); break;
+        case "add-slot": {
+          syncDraft();
+          const last = ders.view.draft.slots.at(-1);
+          ders.view.draft.slots.push({ weekday: last?.weekday || 1, start_time: "", end_time: "", kind: "Übung", room: last?.room || "" });
+          renderCourseEdit();
+          break;
+        }
+        case "del-slot": syncDraft(); ders.view.draft.slots.splice(+el.dataset.i, 1); renderCourseEdit(); break;
+        case "cancel": ders.view = ders.view?.back || null; renderDers(); break;
+        case "save-course": saveCourse(); break;
+        case "del-course": deleteCourse(); break;
+        case "add-task": addTask(ders.view.id); break;
+        case "toggle-task": toggleTask(id); break;
+        case "del-task": delTask(id); break;
+        case "new-exam": openExamEditor(null); break;
+        case "edit-exam": openExamEditor(ders.exams.find((e) => e.id === id)); break;
+        case "save-exam": saveExam(); break;
+        case "del-exam": deleteExam(); break;
+        case "reg-exam": markRegistered(id); break;
+      }
+    });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "ders" && loggedIn) loadDers(); });
+
     // ---------- Bugün ekranı ----------
     let todayTimer = null;
     function setCard(id, html) { $(id).querySelector(".tc-body").innerHTML = html; $(id).querySelector(".tc-body").classList.remove("est"); }
@@ -1627,6 +2229,39 @@
       }
     }
 
+    function todayDers() {
+      if (!ders.ready) return;
+      if (!ders.courses.length) { setCard("tDers", '<div class="tc-line muted">Henüz ders eklenmedi. Eklemek için dokun.</div>'); return; }
+      const ids = activeIds(), tw = todayWd(), nowT = hhmmNow();
+      const today = ders.slots.filter((s) => ids.has(s.course_id) && s.weekday === tw).sort(slotSort);
+      const cur = today.find((s) => t5(s.start_time) <= nowT && nowT < t5(s.end_time || "23:59"));
+      const nxt = today.find((s) => t5(s.start_time) > nowT);
+      const info = (s) => [s.kind, s.room].filter(Boolean).map(esc).join(" · ");
+      let html;
+      if (cur) {
+        const c = courseOf(cur.course_id);
+        html = `<div class="tc-big">${dot(c)} Şimdi: ${esc(cname(c))}</div><div class="tc-line muted">${info(cur)}${cur.end_time ? ` · bitiş ${t5(cur.end_time)}` : ""}</div>`;
+        if (nxt) html += `<div class="tc-line muted">Sonra: ${t5(nxt.start_time)} ${esc(cname(courseOf(nxt.course_id)))}</div>`;
+      } else if (nxt) {
+        const c = courseOf(nxt.course_id);
+        html = `<div class="tc-big">${dot(c)} ${t5(nxt.start_time)} · ${esc(c.name)}</div><div class="tc-line muted">Sıradaki ders · ${info(nxt)}</div>`;
+      } else {
+        const tm = ders.slots.filter((s) => ids.has(s.course_id) && s.weekday === (tw % 7) + 1).sort(slotSort)[0];
+        html = `<div class="tc-big">${today.length ? "Bugünkü dersler bitti" : "Bugün ders yok"}</div>
+          ${tm ? `<div class="tc-line muted">Yarın ilk ders ${t5(tm.start_time)} · ${esc(courseOf(tm.course_id).name)}</div>` : ""}`;
+      }
+      const due = ders.tasks.filter((t) => !t.done && t.due_at && ids.has(t.course_id) && dayDiff(t.due_at) <= 7).sort(byDue);
+      if (due.length) {
+        html += `<ul class="tc-list">${due.slice(0, 3).map((t) => `<li>📝 ${esc(t.title)} <span class="est">${esc(cname(courseOf(t.course_id)))}</span> · <span class="due ${dueClass(t.due_at)}">${relDay(t.due_at)}</span></li>`).join("")}</ul>`;
+        if (due.length > 3) html += `<div class="tc-line muted">+${due.length - 3} teslim daha</div>`;
+      }
+      const ex = ders.exams.filter((e) => new Date(e.exam_at) > new Date() && dayDiff(e.exam_at) <= 30).sort((a, b) => new Date(a.exam_at) - new Date(b.exam_at))[0];
+      if (ex) html += `<div class="tc-line">📅 ${esc(cname(courseOf(ex.course_id)))} sınavı · ${relDay(ex.exam_at)}</div>`;
+      const reg = ders.exams.filter((e) => e.register_by && !e.registered && new Date(e.exam_at) > new Date() && dayDiff(dateOnly(e.register_by)) >= 0 && dayDiff(dateOnly(e.register_by)) <= 7);
+      for (const e of reg) html += `<div class="tc-line warn">⚠️ ${esc(cname(courseOf(e.course_id)))} sınav kaydı son gün: ${relDay(dateOnly(e.register_by))}</div>`;
+      setCard("tDers", html);
+    }
+
     async function loadToday() {
       clearTimeout(todayTimer);
       const h = new Date().getHours();
@@ -1635,6 +2270,7 @@
       todayMail();
       const failed = (id, what) => setCard(id, `<div class="tc-line muted">${what} alınamadı. Dokunup sekmeyi aç.</div>`);
       fetchWeather().then(todayWeather).catch(() => failed("tWx", "Hava durumu"));
+      fetchDers().then(todayDers).catch(() => failed("tDers", "Ders bilgileri"));
       fetchList("todo").then(() => todayList("todo")).catch(() => failed("tTodo", "To-do listesi"));
       fetchList("market").then(() => todayList("market")).catch(() => failed("tGrocery", "Market listesi"));
       fetchGym().then(todayGym).catch(() => failed("tGym", "Gym programı")).finally(() => {
@@ -1649,6 +2285,7 @@
       card.addEventListener("click", () => {
         if (card.id === "tTransit") { [tFrom, tTo] = todayRoute(); }
         if (card.id === "tMail" && digests[0]) select(digests[0].digest_date);
+        if (card.id === "tDers") ders.view = null;
         showTab(card.dataset.goto);
         window.scrollTo(0, 0);
       });
@@ -1674,7 +2311,7 @@
     // ---------- Başlat ----------
     // Uygulama "Bugün" ile açılır; bildirimden (?d=...) gelindiyse mailler
     const qs = new URLSearchParams(location.search);
-    const TABS = ["bugun", "mail", "hava", "ulasim", "gym", "market", "todo"];
+    const TABS = ["bugun", "mail", "hava", "ulasim", "ders", "gym", "market", "todo"];
     let startTab = TABS.includes(qs.get("tab")) ? qs.get("tab") : "bugun";
     if (qs.get("d")) startTab = "mail";
     showTab(startTab);
