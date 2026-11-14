@@ -1683,10 +1683,12 @@
     const KINDS = ["Vorlesung", "Übung", "Tutorium", "Seminer", "Diğer"];
     // Ders detayındaki yapılacaklar iki bölüm: Vorlesung ve Übung
     const TASK_KINDS = [
-      { kind: "Vorlesung", key: "v", icon: "📖", ph: "ör. Kapitel 3 tekrar", empty: "Tekrar edeceğin konular, kaçırdığın kayıtlar, okumalar…" },
-      { kind: "Übung", key: "u", icon: "✏️", ph: "ör. Übungsblatt 4", empty: "Übungsblätter, Abgaben, Tutorium hazırlığı…" },
+      { kind: "Vorlesung", key: "v", icon: "📖", label: "VORLESUNG", ph: "ör. Kapitel 3 tekrar", empty: "Tekrar edeceğin konular, kaçırdığın kayıtlar, okumalar…", due: true },
+      { kind: "Übung", key: "u", icon: "✏️", label: "ÜBUNG", ph: "ör. Übungsblatt 4", empty: "Übungsblätter, Abgaben, Tutorium hazırlığı…", due: true },
+      { kind: "Lösung", key: "l", icon: "✅", label: "ÜBUNG CEVAPLARI", ph: "ör. Lösung Blatt 4", empty: "Henüz yüklenmiş cevap yok.", due: false },
     ];
-    const taskKind = (t) => (t.kind === "Vorlesung" ? "Vorlesung" : "Übung");
+    const taskKind = (t) => (t.kind === "Vorlesung" || t.kind === "Lösung" ? t.kind : "Übung");
+    const isWork = (t) => t.kind !== "Lösung";   // ilerleme hesabında cevaplar sayılmaz
     const ders = { sub: "program", view: null, sure: null, busy: false, ready: false, courses: [], slots: [], tasks: [], exams: [] };
     const DAY = 86400000;
 
@@ -1821,7 +1823,7 @@
       if (upcoming.length) html += `<div class="sub-h first"><span>YAKLAŞAN TESLİMLER</span></div><ul class="items">${upcoming.map((t) => taskRow(t, true)).join("")}</ul>`;
       html += `<div class="sub-h${upcoming.length ? "" : " first"}"><span>BU DÖNEM · ${active.length} DERS</span></div>`;
       html += active.length ? active.map((c) => {
-        const ts = ders.tasks.filter((t) => t.course_id === c.id), done = ts.filter((t) => t.done).length;
+        const ts = ders.tasks.filter((t) => t.course_id === c.id && isWork(t)), done = ts.filter((t) => t.done).length;
         const pct = ts.length ? Math.round((done / ts.length) * 100) : 0;
         const next = ts.filter((t) => !t.done && t.due_at).sort(byDue)[0];
         const sub = [c.ects ? fmtNum(c.ects) + " ECTS" : "", ts.length ? `${done}/${ts.length} görev` : "görev yok", next ? `sıradaki teslim ${relDay(next.due_at)}` : ""].filter(Boolean).join(" · ");
@@ -1840,10 +1842,11 @@
       const c = courseOf(id);
       if (!c) { ders.view = null; return renderDers(); }
       const tasks = ders.tasks.filter((t) => t.course_id === id);
-      const done = tasks.filter((t) => t.done);
+      const work = tasks.filter(isWork);
+      const done = work.filter((t) => t.done);
       const slots = ders.slots.filter((s) => s.course_id === id).sort(slotSort);
       const exams = ders.exams.filter((e) => e.course_id === id && new Date(e.exam_at) > Date.now() - DAY);
-      const pct = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
+      const pct = work.length ? Math.round((done.length / work.length) * 100) : 0;
       const backTo = { program: "Program", dersler: "Dersler", sinav: "Sınavlar", notlar: "Notlar" }[ders.sub];
       const status = c.status === "gecti" ? `Geçti${c.grade != null ? " · " + fmtGrade(c.grade) : ""}` : c.status === "kaldi" ? "Kaldı" : "";
       $("dersCard").innerHTML = `
@@ -1855,7 +1858,7 @@
         </div>
         ${slots.length ? `<div class="crs-info">${slots.map((s) => `<div>🕒 ${WDS[s.weekday]} ${t5(s.start_time)}${s.end_time ? "–" + t5(s.end_time) : ""}${s.kind ? " · " + esc(s.kind) : ""}${s.room ? " · " + esc(s.room) : ""}</div>`).join("")}</div>` : ""}
         ${exams.length ? `<div class="crs-info">${exams.map((e) => `<div>📅 Sınav: ${fmtDate(e.exam_at)} · ${relDay(e.exam_at)}</div>`).join("")}</div>` : ""}
-        <div class="sub-h"><span>YAPILACAKLAR · ${done.length}/${tasks.length} BİTTİ</span><span>%${pct}</span></div>
+        <div class="sub-h"><span>YAPILACAKLAR · ${done.length}/${work.length} BİTTİ</span><span>%${pct}</span></div>
         <div class="bar wide"><i style="width:${pct}%;background:${esc(c.color || COLORS[0])}"></i></div>
         ${TASK_KINDS.map((k) => taskSection(tasks, k)).join("")}
         <p class="error" id="dersErr"></p>`;
@@ -1868,12 +1871,12 @@
       const open = mine.filter((t) => !t.done).sort(byDue);
       const done = mine.filter((t) => t.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       return `<div class="tk-sec">
-          <div class="sub-h"><span>${k.icon} ${k.kind.toLocaleUpperCase("de-DE")}</span><span>${mine.length ? `${done.length}/${mine.length}` : ""}</span></div>
+          <div class="sub-h"><span>${k.icon} ${k.label}</span><span>${mine.length ? `${done.length}/${mine.length}` : ""}</span></div>
           <div class="add-row" style="margin-top:8px">
             <input id="taskIn-${k.key}" placeholder="${esc(k.ph)}" autocomplete="off" enterkeyhint="done" aria-label="${k.kind} görevi">
             <button class="btn" type="button" data-act="add-task" data-kind="${k.kind}" aria-label="Ekle">+</button>
           </div>
-          <div class="due-row"><span>Tarih</span><input type="date" id="taskDate-${k.key}" aria-label="Gün"><input type="time" id="taskTime-${k.key}" aria-label="Saat"></div>
+          ${k.due ? `<div class="due-row"><span>Tarih</span><input type="date" id="taskDate-${k.key}" aria-label="Gün"><input type="time" id="taskTime-${k.key}" aria-label="Saat"></div>` : ""}
           ${open.length || done.length ? `<ul class="items">${[...open, ...done].map((t) => taskRow(t, false)).join("")}</ul>` : ""}
           ${open.length ? "" : `<div class="tk-empty">${mine.length ? "Hepsi bitti 🎉" : esc(k.empty)}</div>`}
         </div>`;
@@ -1881,7 +1884,7 @@
 
     async function addTask(courseId, kind) {
       const k = TASK_KINDS.find((x) => x.kind === kind) || TASK_KINDS[1];
-      const title = $("taskIn-" + k.key).value.trim(), d = $("taskDate-" + k.key).value, t = $("taskTime-" + k.key).value;
+      const title = $("taskIn-" + k.key).value.trim(), d = $("taskDate-" + k.key)?.value || "", t = $("taskTime-" + k.key)?.value || "";
       if (!title) { $("taskIn-" + k.key).focus(); return; }
       const { data, error } = await sb.from("course_tasks").insert({ course_id: courseId, kind: k.kind, title, due_at: d ? localIso(d, t) : null }).select("*").single();
       if (error) return dersErr("Eklenemedi: " + error.message);
