@@ -327,6 +327,9 @@
     .due { font-size: 13px; color: var(--muted); text-decoration: none; display: inline-block; }
     .due.soon { color: #e8590c; font-weight: 650; } .due.over { color: var(--danger); font-weight: 650; }
     .item.done .due { text-decoration: line-through; }
+    .tk-sec { margin-top: 18px; padding-top: 2px; border-top: 1px solid var(--line); }
+    .tk-sec .sub-h { margin-top: 12px; }
+    .tk-empty { color: var(--muted); font-size: 14px; padding: 6px 0 2px; }
     .back { border: 0; background: none; color: var(--accent); font: inherit; font-size: 15px; padding: 0; cursor: pointer; margin: 0 0 10px; }
     .crs-info { font-size: 14px; color: var(--muted); display: grid; gap: 3px; margin: 8px 0 0; }
     .due-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin: -2px 0 10px; font-size: 13px; color: var(--muted); }
@@ -1677,6 +1680,12 @@
     // ---------- Ders: haftalık program, görevler/ilerleme, sınavlar, notlar (Supabase'de saklanır) ----------
     const COLORS = ["#3b5bdb", "#e8590c", "#2f9e44", "#c2255c", "#7048e8", "#1098ad", "#f08c00", "#868e96"];
     const KINDS = ["Vorlesung", "Übung", "Tutorium", "Seminer", "Diğer"];
+    // Ders detayındaki yapılacaklar iki bölüm: Vorlesung ve Übung
+    const TASK_KINDS = [
+      { kind: "Vorlesung", key: "v", icon: "📖", ph: "ör. Kapitel 3 tekrar", empty: "Tekrar edeceğin konular, kaçırdığın kayıtlar, okumalar…" },
+      { kind: "Übung", key: "u", icon: "✏️", ph: "ör. Übungsblatt 4", empty: "Übungsblätter, Abgaben, Tutorium hazırlığı…" },
+    ];
+    const taskKind = (t) => (t.kind === "Vorlesung" ? "Vorlesung" : "Übung");
     const ders = { sub: "program", view: null, sure: null, busy: false, ready: false, courses: [], slots: [], tasks: [], exams: [] };
     const DAY = 86400000;
 
@@ -1766,7 +1775,7 @@
       const due = t.due_at ? `<span class="due ${t.done ? "" : dueClass(t.due_at)}">${fmtDate(t.due_at)} · ${relDay(t.due_at)}</span>` : "";
       return `<li class="item${t.done ? " done" : ""}">
           <button type="button" class="tick" data-act="toggle-task" data-id="${t.id}" aria-pressed="${t.done}" aria-label="${t.done ? "Geri al" : "Tamamlandı"}">✓</button>
-          <span class="nm" data-act="toggle-task" data-id="${t.id}">${esc(t.title)}${showCourse ? ` <span class="est">· ${dot(c)} ${esc(cname(c))}</span>` : ""}${due ? "<br>" + due : ""}</span>
+          <span class="nm" data-act="toggle-task" data-id="${t.id}">${esc(t.title)}${showCourse ? ` <span class="est">· ${dot(c)} ${esc(cname(c))} ${esc(taskKind(t))}</span>` : ""}${due ? "<br>" + due : ""}</span>
           <button type="button" class="del" data-act="del-task" data-id="${t.id}" aria-label="Sil">×</button>
         </li>`;
     };
@@ -1829,8 +1838,7 @@
       const c = courseOf(id);
       if (!c) { ders.view = null; return renderDers(); }
       const tasks = ders.tasks.filter((t) => t.course_id === id);
-      const open = tasks.filter((t) => !t.done).sort(byDue);
-      const done = tasks.filter((t) => t.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+      const done = tasks.filter((t) => t.done);
       const slots = ders.slots.filter((s) => s.course_id === id).sort(slotSort);
       const exams = ders.exams.filter((e) => e.course_id === id && new Date(e.exam_at) > Date.now() - DAY);
       const pct = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
@@ -1845,28 +1853,39 @@
         </div>
         ${slots.length ? `<div class="crs-info">${slots.map((s) => `<div>🕒 ${WDS[s.weekday]} ${t5(s.start_time)}${s.end_time ? "–" + t5(s.end_time) : ""}${s.kind ? " · " + esc(s.kind) : ""}${s.room ? " · " + esc(s.room) : ""}</div>`).join("")}</div>` : ""}
         ${exams.length ? `<div class="crs-info">${exams.map((e) => `<div>📅 Sınav: ${fmtDate(e.exam_at)} · ${relDay(e.exam_at)}</div>`).join("")}</div>` : ""}
-        <div class="sub-h"><span>İLERLEME · ${done.length}/${tasks.length} GÖREV</span><span>%${pct}</span></div>
+        <div class="sub-h"><span>YAPILACAKLAR · ${done.length}/${tasks.length} BİTTİ</span><span>%${pct}</span></div>
         <div class="bar wide"><i style="width:${pct}%;background:${esc(c.color || COLORS[0])}"></i></div>
-        <div class="add-row" style="margin-top:14px">
-          <input id="taskIn" placeholder="Görev ekle (ör. Übungsblatt 4)" autocomplete="off" enterkeyhint="done" aria-label="Görev">
-          <button class="btn" type="button" data-act="add-task" aria-label="Ekle">+</button>
-        </div>
-        <div class="due-row"><span>Teslim (ops.)</span><input type="date" id="taskDate" aria-label="Teslim günü"><input type="time" id="taskTime" aria-label="Teslim saati"></div>
-        ${open.length ? `<ul class="items">${open.map((t) => taskRow(t, false)).join("")}</ul>`
-          : `<div class="empty" style="padding:20px 8px">${tasks.length ? "Hepsi bitti 🎉" : "Henüz görev yok.<br><small>Übungsblätter, tekrar edeceğin konular, okumalar…</small>"}</div>`}
-        ${done.length ? `<div class="sub-h"><span>TAMAMLANDI · ${done.length}</span></div><ul class="items">${done.map((t) => taskRow(t, false)).join("")}</ul>` : ""}
+        ${TASK_KINDS.map((k) => taskSection(tasks, k)).join("")}
         <p class="error" id="dersErr"></p>`;
-      $("taskIn").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTask(id); } });
+      for (const k of TASK_KINDS) $("taskIn-" + k.key).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTask(id, k.kind); } });
     }
 
-    async function addTask(courseId) {
-      const title = $("taskIn").value.trim(), d = $("taskDate").value, t = $("taskTime").value;
-      if (!title) { $("taskIn").focus(); return; }
-      const { data, error } = await sb.from("course_tasks").insert({ course_id: courseId, title, due_at: d ? localIso(d, t) : null }).select("*").single();
+    // Yapılacaklar bölümü (Vorlesung ya da Übung): ekleme satırı + açık görevler + bitenler
+    function taskSection(tasks, k) {
+      const mine = tasks.filter((t) => taskKind(t) === k.kind);
+      const open = mine.filter((t) => !t.done).sort(byDue);
+      const done = mine.filter((t) => t.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+      return `<div class="tk-sec">
+          <div class="sub-h"><span>${k.icon} ${k.kind.toLocaleUpperCase("de-DE")}</span><span>${mine.length ? `${done.length}/${mine.length}` : ""}</span></div>
+          <div class="add-row" style="margin-top:8px">
+            <input id="taskIn-${k.key}" placeholder="${esc(k.ph)}" autocomplete="off" enterkeyhint="done" aria-label="${k.kind} görevi">
+            <button class="btn" type="button" data-act="add-task" data-kind="${k.kind}" aria-label="Ekle">+</button>
+          </div>
+          <div class="due-row"><span>Tarih</span><input type="date" id="taskDate-${k.key}" aria-label="Gün"><input type="time" id="taskTime-${k.key}" aria-label="Saat"></div>
+          ${open.length || done.length ? `<ul class="items">${[...open, ...done].map((t) => taskRow(t, false)).join("")}</ul>` : ""}
+          ${open.length ? "" : `<div class="tk-empty">${mine.length ? "Hepsi bitti 🎉" : esc(k.empty)}</div>`}
+        </div>`;
+    }
+
+    async function addTask(courseId, kind) {
+      const k = TASK_KINDS.find((x) => x.kind === kind) || TASK_KINDS[1];
+      const title = $("taskIn-" + k.key).value.trim(), d = $("taskDate-" + k.key).value, t = $("taskTime-" + k.key).value;
+      if (!title) { $("taskIn-" + k.key).focus(); return; }
+      const { data, error } = await sb.from("course_tasks").insert({ course_id: courseId, kind: k.kind, title, due_at: d ? localIso(d, t) : null }).select("*").single();
       if (error) return dersErr("Eklenemedi: " + error.message);
       ders.tasks.push(data);
       renderDers();
-      $("taskIn")?.focus();
+      $("taskIn-" + k.key)?.focus();
     }
 
     async function toggleTask(id) {
@@ -2176,7 +2195,7 @@
         case "cancel": ders.view = ders.view?.back || null; renderDers(); break;
         case "save-course": saveCourse(); break;
         case "del-course": deleteCourse(); break;
-        case "add-task": addTask(ders.view.id); break;
+        case "add-task": addTask(ders.view.id, el.dataset.kind); break;
         case "toggle-task": toggleTask(id); break;
         case "del-task": delTask(id); break;
         case "new-exam": openExamEditor(null); break;
