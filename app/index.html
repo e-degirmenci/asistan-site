@@ -351,6 +351,8 @@
     .tk-empty { color: var(--muted); font-size: 14px; padding: 6px 0 2px; }
     .back { border: 0; background: none; color: var(--accent); font: inherit; font-size: 15px; padding: 0; cursor: pointer; margin: 0 0 10px; }
     .crs-info { font-size: 14px; color: var(--muted); display: grid; gap: 3px; margin: 8px 0 0; }
+    .crs-info .slot-link { color: var(--muted); text-decoration: none; }
+    .crs-info .slot-link .go { color: var(--accent); }
     .due-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin: -2px 0 10px; font-size: 13px; color: var(--muted); }
     .due-row input { font: inherit; font-size: 14px; padding: 7px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); width: auto; min-width: 0; }
     .form label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin: 12px 0 5px; }
@@ -1743,6 +1745,13 @@
       const d = new Date(iso);
       return [berlinDay(d), d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })];
     };
+    // Salon linki: LMU Raumfinder'da o oda (kayıtlıysa), yoksa adres haritada
+    const roomLink = (s) => {
+      if (s.room_url) return s.room_url;
+      if (!s.room) return null;
+      const addr = s.room.split(" · ").slice(1).join(" ") || s.room;
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addr + ", München");
+    };
     const slotSort = (a, b) => a.weekday - b.weekday || (t5(a.start_time) > t5(b.start_time) ? 1 : -1);
     const dueVal = (t) => (t.due_at ? Date.parse(t.due_at) : 9e15);
     const byDue = (a, b) => dueVal(a) - dueVal(b) || a.id - b.id;
@@ -1895,7 +1904,11 @@
           <h1>${dot(c)} ${esc(c.name)}</h1></div>
           <button class="btn-ghost" type="button" data-act="edit-course" data-id="${id}">Düzenle</button>
         </div>
-        ${slots.length ? `<div class="crs-info">${slots.map((s) => `<div>🕒 ${WDS[s.weekday]} ${t5(s.start_time)}${s.end_time ? "–" + t5(s.end_time) : ""}${s.kind ? " · " + esc(s.kind) : ""}${s.room ? " · " + esc(s.room) : ""}</div>`).join("")}</div>` : ""}
+        ${slots.length ? `<div class="crs-info">${slots.map((s) => {
+            const txt = `🕒 ${WDS[s.weekday]} ${t5(s.start_time)}${s.end_time ? "–" + t5(s.end_time) : ""}${s.kind ? " · " + esc(s.kind) : ""}${s.room ? " · " + esc(s.room) : ""}`;
+            const url = roomLink(s);
+            return url ? `<a class="slot-link" href="${esc(url)}" target="_blank" rel="noopener">${txt} <span class="go">↗</span></a>` : `<div>${txt}</div>`;
+          }).join("")}</div>` : ""}
         ${exams.length ? `<div class="crs-info">${exams.map((e) => `<div>📅 Sınav: ${fmtDate(e.exam_at)} · ${relDay(e.exam_at)}</div>`).join("")}</div>` : ""}
         <div class="sub-h"><span>YAPILACAKLAR · ${done.length}/${work.length} BİTTİ</span><span>%${pct}</span></div>
         <div class="bar wide"><i style="width:${pct}%;background:${esc(c.color || COLORS[0])}"></i></div>
@@ -2047,6 +2060,8 @@
         const slots = d.slots.filter((s) => s.start_time).map((s) => ({
           ...(s.id ? { id: s.id } : {}), course_id: id, weekday: +s.weekday, start_time: s.start_time,
           end_time: s.end_time || null, kind: s.kind || null, room: (s.room || "").trim() || null,
+          // salon değiştiyse eski Raumfinder linki geçersiz
+          room_url: (() => { const o = ders.slots.find((x) => x.id === s.id); return o && o.room === ((s.room || "").trim() || null) ? o.room_url ?? null : null; })(),
         }));
         const keep = slots.filter((s) => s.id).map((s) => s.id);
         const removed = ders.slots.filter((s) => s.course_id === id && !keep.includes(s.id)).map((s) => s.id);
