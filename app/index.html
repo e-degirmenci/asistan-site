@@ -1868,7 +1868,9 @@
     // Yapılacaklar bölümü (Vorlesung ya da Übung): ekleme satırı + açık görevler + bitenler
     function taskSection(tasks, k) {
       const mine = tasks.filter((t) => taskKind(t) === k.kind);
-      const open = mine.filter((t) => !t.done).sort(byDue);
+      // Cevaplar sayfa adına göre sıralı (Hausaufgabenblatt 01, 02 … sonra Präsenzblatt 01 …)
+      const byTitle = (a, b) => a.title.localeCompare(b.title, "de", { numeric: true });
+      const open = mine.filter((t) => !t.done).sort(k.kind === "Lösung" ? byTitle : byDue);
       const done = mine.filter((t) => t.done).sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
       return `<div class="tk-sec">
           <div class="sub-h"><span>${k.icon} ${k.label}</span><span>${mine.length ? `${done.length}/${mine.length}` : ""}</span></div>
