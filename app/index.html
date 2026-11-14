@@ -327,6 +327,7 @@
     .due { font-size: 13px; color: var(--muted); text-decoration: none; display: inline-block; }
     .due.soon { color: #e8590c; font-weight: 650; } .due.over { color: var(--danger); font-weight: 650; }
     .item.done .due { text-decoration: line-through; }
+    .item .mlink { color: var(--accent); text-decoration: none; font-size: 17px; padding: 2px 4px; line-height: 1; }
     .tk-sec { margin-top: 18px; padding-top: 2px; border-top: 1px solid var(--line); }
     .tk-sec .sub-h { margin-top: 12px; }
     .tk-empty { color: var(--muted); font-size: 14px; padding: 6px 0 2px; }
@@ -1776,6 +1777,7 @@
       return `<li class="item${t.done ? " done" : ""}">
           <button type="button" class="tick" data-act="toggle-task" data-id="${t.id}" aria-pressed="${t.done}" aria-label="${t.done ? "Geri al" : "Tamamlandı"}">✓</button>
           <span class="nm" data-act="toggle-task" data-id="${t.id}">${esc(t.title)}${showCourse ? ` <span class="est">· ${dot(c)} ${esc(cname(c))} ${esc(taskKind(t))}</span>` : ""}${due ? "<br>" + due : ""}</span>
+          ${t.url ? `<a class="mlink" href="${esc(t.url)}" target="_blank" rel="noopener" aria-label="Moodle'da aç">↗</a>` : ""}
           <button type="button" class="del" data-act="del-task" data-id="${t.id}" aria-label="Sil">×</button>
         </li>`;
     };
