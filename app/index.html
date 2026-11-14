@@ -300,6 +300,24 @@
     .seg4 button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
     .cdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; vertical-align: 1px; }
     .sub-h.first { margin-top: 2px; }
+    .cal { font-size: 12px; }
+    .cal-head, .cal-body { display: grid; grid-template-columns: 30px repeat(var(--days), 1fr); }
+    .cal-head > div { text-align: center; font-weight: 700; color: var(--muted); padding: 0 0 6px; font-size: 12px; }
+    .cal-head > .today { color: var(--accent); }
+    .cal-body { position: relative; }
+    .cal-times > div { height: var(--h); color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; transform: translateY(-6px); }
+    .cal-col { position: relative; border-left: 1px solid var(--line);
+      background-image: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px var(--h)); }
+    .cal-col.today { background-color: var(--accent-soft); }
+    .cal-ev { position: absolute; margin-left: 1px; border: 0; border-radius: 8px; padding: 4px 4px; color: #fff; text-align: left; font: inherit;
+      font-size: 11px; line-height: 1.25; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; gap: 1px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+    .cal-ev b { font-size: 12px; }
+    .cal-ev span { opacity: .92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ev .tm { opacity: .8; font-variant-numeric: tabular-nums; }
+    .cal-ev.narrow { padding: 4px 2px; font-size: 10px; }
+    .cal-ev.narrow b { font-size: 10px; }
+    .cal-now { position: absolute; left: -1px; right: 0; height: 2px; background: #e03131; z-index: 2; }
+    .cal-now::before { content: ""; position: absolute; left: -3px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #e03131; }
     .wk-day { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; margin: 18px 0 2px; }
     .wk-day:first-child { margin-top: 0; }
     .wk-day.today { color: var(--accent); }
@@ -1784,7 +1802,7 @@
         </li>`;
     };
 
-    // --- Program ---
+    // --- Program: haftalık takvim görünümü ---
     function renderProgram() {
       const active = activeIds();
       const slots = ders.slots.filter((s) => active.has(s.course_id)).sort(slotSort);
@@ -1793,25 +1811,46 @@
           <button class="btn" type="button" data-act="new-course" style="width:100%">+ Ders ekle</button>`;
         return;
       }
-      const tw = todayWd(), nowT = hhmmNow();
-      const days = [...new Set(slots.map((s) => s.weekday))];
-      const order = [...days.filter((d) => d >= tw), ...days.filter((d) => d < tw)];   // bugünden başlayarak
-      let nextMarked = false;
-      $("dersCard").innerHTML = order.map((d) => {
-        const label = d === tw ? "Bugün · " : d === (tw % 7) + 1 ? "Yarın · " : "";
-        return `<div class="wk-day${d === tw ? " today" : ""}">${label}${WD[d]}</div>` + slots.filter((s) => s.weekday === d).map((s) => {
-          const c = courseOf(s.course_id);
-          let badge = "";
-          if (d === tw) {
-            if (t5(s.start_time) <= nowT && nowT < t5(s.end_time || "23:59")) badge = '<span class="badge now">şimdi</span>';
-            else if (!nextMarked && t5(s.start_time) > nowT) { badge = '<span class="badge next">sıradaki</span>'; nextMarked = true; }
-          }
-          return `<div class="slot" data-act="open-course" data-id="${c.id}">
-              <div class="tm">${t5(s.start_time)}${s.end_time ? `<span>${t5(s.end_time)}</span>` : ""}</div>
-              <div class="sl-main"><div class="sl-name">${dot(c)} ${esc(c.name)}${badge}</div><div class="sl-sub">${[s.kind, s.room].filter(Boolean).map(esc).join(" · ")}</div></div>
-            </div>`;
+      const toMin = (t) => { const [h, m] = t5(t).split(":").map(Number); return h * 60 + m; };
+      const endOf = (s) => (s.end_time ? toMin(s.end_time) : toMin(s.start_time) + 90);
+      const days = [1, 2, 3, 4, 5];
+      for (const s of slots) if (!days.includes(s.weekday)) days.push(s.weekday);
+      days.sort((a, b) => a - b);
+      const startH = Math.min(8, Math.floor(Math.min(...slots.map((s) => toMin(s.start_time))) / 60));
+      const endH = Math.max(18, Math.ceil(Math.max(...slots.map(endOf)) / 60));
+      const H = 46;                                   // 1 saatin yüksekliği (px)
+      const y = (m) => ((m - startH * 60) / 60) * H;
+      const tw = todayWd(), nowM = toMin(hhmmNow());
+      const hours = Array.from({ length: endH - startH }, (_, k) => startH + k);
+
+      const cols = days.map((d) => {
+        // Çakışan dersler yan yana (şeritlere bölünür)
+        const ev = slots.filter((s) => s.weekday === d).map((s) => ({ s, a: toMin(s.start_time), b: endOf(s) })).sort((p, q) => p.a - q.a);
+        const lanes = [];
+        for (const e of ev) { let k = lanes.findIndex((end) => end <= e.a); if (k < 0) { k = lanes.length; lanes.push(0); } lanes[k] = e.b; e.lane = k; }
+        for (const e of ev) e.n = Math.max(...ev.filter((o) => o.a < e.b && e.a < o.b).map((o) => o.lane)) + 1;
+        const blocks = ev.map((e) => {
+          const c = courseOf(e.s.course_id);
+          const room = (e.s.room || "").split(" · ")[0].replace(/\s*\(.*\)\s*$/, "");   // sadece salon kodu (ör. N 120)
+          return `<button type="button" class="cal-ev${e.n > 1 ? " narrow" : ""}" data-act="open-course" data-id="${c.id}"
+              style="top:${y(e.a)}px;height:${Math.max(y(e.b) - y(e.a) - 2, 22)}px;left:calc(${e.lane} * 100% / ${e.n});width:calc(100% / ${e.n} - 2px);background:${esc(c.color || COLORS[0])}"
+              aria-label="${esc(c.name)} ${t5(e.s.start_time)}${room ? ", " + esc(room) : ""}">
+              <b>${esc(cname(c))}</b>${room ? `<span>${esc(room)}</span>` : ""}<span class="tm">${t5(e.s.start_time)}</span>
+            </button>`;
         }).join("");
-      }).join("") + '<p class="est" style="margin:14px 0 0">Saatleri değiştirmek için derse dokun → Düzenle.</p>';
+        const nowLine = d === tw && nowM >= startH * 60 && nowM <= endH * 60 ? `<div class="cal-now" style="top:${y(nowM)}px"></div>` : "";
+        return `<div class="cal-col${d === tw ? " today" : ""}">${blocks}${nowLine}</div>`;
+      }).join("");
+
+      $("dersCard").innerHTML = `
+        <div class="cal" style="--h:${H}px;--days:${days.length}">
+          <div class="cal-head"><div></div>${days.map((d) => `<div class="${d === tw ? "today" : ""}">${WDS[d]}</div>`).join("")}</div>
+          <div class="cal-body" style="height:${hours.length * H}px">
+            <div class="cal-times">${hours.map((h) => `<div>${String(h).padStart(2, "0")}</div>`).join("")}</div>
+            ${cols}
+          </div>
+        </div>
+        <p class="est" style="margin:12px 0 0">Salon, adres ve saat değişikliği için derse dokun.</p>`;
     }
 
     // --- Dersler (aktif dersler + yaklaşan teslimler) ---
