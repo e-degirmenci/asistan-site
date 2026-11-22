@@ -114,7 +114,7 @@
 
     /* Sekmeler */
     .tabs {
-      display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 4px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; padding: 4px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
     }
     .tab {
@@ -124,8 +124,8 @@
     }
     .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
     .tab .ti { font-size: 19px; line-height: 1.1; }
-    @media (max-width: 430px) { .tab { font-size: 11px; } }
-    @media (max-width: 380px) { .tab { font-size: 10px; letter-spacing: -0.01em; } .tab .ti { font-size: 18px; } .tabs { padding: 3px; } }
+    @media (max-width: 430px) { .tab { font-size: 10px; letter-spacing: -0.01em; } }
+    @media (max-width: 380px) { .tab { font-size: 9px; letter-spacing: -0.02em; } .tab .ti { font-size: 18px; } .tabs { padding: 3px; } }
 
     /* Bugün */
     .hello { margin: 2px 2px 14px; }
@@ -436,6 +436,30 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, .25); max-width: calc(100% - 32px); text-align: center;
     }
 
+
+    /* Rutin */
+    .rt-wake { display: flex; align-items: center; gap: 20px; }
+    .rt-wake .k { color: var(--muted); font-size: 13px; font-weight: 600; }
+    .rt-wake .v { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .rt-wake .v.sm { font-size: 22px; color: var(--muted); font-weight: 700; }
+    .rt-wake .gx-streak { margin-left: auto; }
+    .rt-list .item.done .nm { text-decoration: none; color: var(--text); }
+    .rt-list .item .est { font-size: 13px; }
+    .rt-grid { display: grid; grid-template-columns: 30px repeat(7, 1fr); gap: 7px 4px; align-items: center; justify-items: center; font-size: 12px; margin: 6px 0 2px; }
+    .rt-grid .h { color: var(--muted); font-weight: 700; }
+    .rt-grid .h.today { color: var(--accent); }
+    .rt-grid .e { font-size: 17px; line-height: 1; }
+    .rt-grid i { width: 22px; height: 22px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--line); }
+    .rt-grid i.on { background: #2f9e44; border-color: #2f9e44; }
+    .rt-grid i.today:not(.on) { border-color: var(--accent); }
+    .rt-grid i.pre { opacity: .35; }
+    .rt-plan { list-style: none; padding: 0; margin: 2px 0 0; }
+    .rt-plan li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 15px; font-variant-numeric: tabular-nums; }
+    .rt-plan li:first-child { border-top: 0; }
+    .rt-plan li.today { font-weight: 700; color: var(--accent); }
+    .rt-plan li.past { color: var(--muted); }
+    .rt-rule { font-size: 13px; color: var(--muted); margin: 12px 2px 4px; }
+
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
       position: sticky; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
@@ -485,6 +509,7 @@
         <button class="tab" role="tab" type="button" data-tab="ulasim" aria-selected="false"><span class="ti">🚇</span>Ulaşım</button>
         <button class="tab" role="tab" type="button" data-tab="ders" aria-selected="false"><span class="ti">🎓</span>Ders</button>
         <button class="tab" role="tab" type="button" data-tab="gym" aria-selected="false"><span class="ti">🏋️</span>Gym</button>
+        <button class="tab" role="tab" type="button" data-tab="rutin" aria-selected="false"><span class="ti">😴</span>Rutin</button>
         <button class="tab" role="tab" type="button" data-tab="market" aria-selected="false"><span class="ti">🛒</span>Market</button>
         <button class="tab" role="tab" type="button" data-tab="todo" aria-selected="false"><span class="ti">✅</span>To-do</button>
       </div>
@@ -492,6 +517,7 @@
       <!-- Sekme: Bugün -->
       <div id="tab-bugun" role="tabpanel">
         <div class="hello"><h2 id="helloTitle"></h2><div id="helloDate" class="wx-sub"></div></div>
+        <article class="card tcard" id="tRutin" data-goto="rutin"><div class="tc-head"><span>😴 Rutin</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tWx" data-goto="hava"><div class="tc-head"><span>🌤️ Hava</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tTransit" data-goto="ulasim"><div class="tc-head"><span>🚇 Ulaşım</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
         <article class="card tcard" id="tDers" data-goto="ders"><div class="tc-head"><span>🎓 Ders</span><span class="go">›</span></div><div class="tc-body est">Yükleniyor…</div></article>
@@ -538,6 +564,14 @@
         <nav class="days" id="gymDays" aria-label="Program günleri"></nav>
         <article class="card" id="gymCard"><div class="empty">Yükleniyor…</div></article>
         <article class="card" id="gymBadges" hidden></article>
+      </div>
+
+      <!-- Sekme: Rutin -->
+      <div id="tab-rutin" role="tabpanel" hidden>
+        <div class="card gx" id="rutinHead" hidden></div>
+        <nav class="days" id="rutinDays" aria-label="Günler"></nav>
+        <article class="card list-card" id="rutinCard"><div class="empty">Yükleniyor…</div></article>
+        <article class="card" id="rutinWeek" style="margin-top:12px;padding-bottom:12px" hidden></article>
       </div>
 
       <!-- Sekme: Ders -->
@@ -632,6 +666,7 @@
       if (currentTab === "hava") loadWeather();
       if (LISTS[currentTab]) loadList(currentTab);
       if (currentTab === "ders") loadDers();
+      if (currentTab === "rutin") loadRutin();
       await loadDigests();
       if (currentTab === "bugun") loadToday();
       await refreshNotice();
@@ -802,6 +837,7 @@
       $("tab-ulasim").hidden = name !== "ulasim";
       $("tab-gym").hidden = name !== "gym";
       $("tab-ders").hidden = name !== "ders";
+      $("tab-rutin").hidden = name !== "rutin";
       $("tab-market").hidden = name !== "market";
       $("tab-todo").hidden = name !== "todo";
       currentTab = name;
@@ -813,6 +849,7 @@
       if (name === "gym" && !gym.editing) loadGym();
       if (LISTS[name]) loadList(name);
       if (name === "ders") loadDers();
+      if (name === "rutin") loadRutin();
     }
     for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -2437,6 +2474,200 @@
       return `<div class="tc-line muted">${st.streak ? `🔥 ${st.streak} hafta seri · ` : ""}bu hafta ${st.thisCount}/${st.goal} · Seviye ${st.lvl.L}</div>`;
     }
 
+    // ---------- Rutin: kalkış saati planı + günlük alışkanlık takibi (Supabase'de saklanır) ----------
+    // routine_habits: alışkanlıklar (kind 'wake' = kalkış hedefine bağlı olan)
+    // routine_logs: işaretlenen gün (satır varsa o gün yapıldı)
+    // routine_wake_plan: o günden itibaren geçerli kalkış saati
+    const rutin = { ready: false, habits: [], logs: [], plan: [], day: null, editing: false };
+    const addDays = (ds, n) => { const d = new Date(ds + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const shortWd = (ds) => ["Pz", "Pt", "Sa", "Ça", "Pe", "Cu", "Ct"][new Date(ds + "T12:00:00Z").getUTCDay()];
+    const planLabel = (ds) => new Date(ds + "T12:00:00Z").toLocaleDateString("tr-TR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+    const wakeFor = (ds) => { let t = null; for (const p of rutin.plan) if (p.day <= ds) t = t5(p.wake_time); return t; };
+    const isDone = (hid, ds) => rutin.logs.some((l) => l.habit_id === hid && l.day === ds);
+    const wakeHabit = () => rutin.habits.find((h) => h.kind === "wake");
+    const planStart = () => rutin.plan[0]?.day || null;
+
+    async function fetchRutin() {
+      const [h, l, p] = await Promise.all([
+        sb.from("routine_habits").select("*").eq("active", true).order("position").order("id"),
+        sb.from("routine_logs").select("habit_id,day").gte("day", todayStr(-90)),
+        sb.from("routine_wake_plan").select("day,wake_time").order("day"),
+      ]);
+      const err = h.error || l.error || p.error;
+      if (err) throw err;
+      Object.assign(rutin, { habits: h.data, logs: l.data, plan: p.data, ready: true });
+    }
+
+    async function loadRutin() {
+      if (!rutin.ready) $("rutinCard").innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        await fetchRutin();
+      } catch (err) {
+        $("rutinCard").innerHTML = `<div class="empty">Rutin yüklenemedi.<br><small>${esc(err.message || err)}</small></div>`;
+        return;
+      }
+      renderRutin();
+    }
+
+    function rutinStats() {
+      const today = todayStr(), w = wakeHabit(), start = planStart() || today;
+      let streak = 0;
+      if (w) {
+        let d = isDone(w.id, today) ? today : addDays(today, -1);
+        while (isDone(w.id, d)) { streak++; d = addDays(d, -1); }
+      }
+      const last7 = [];
+      for (let i = 6; i >= 0; i--) last7.push(addDays(today, -i));
+      const counted = last7.filter((d) => d >= start);
+      const hit = w ? counted.filter((d) => isDone(w.id, d)).length : 0;
+      const y = addDays(today, -1);
+      const yMissed = !!w && y >= start && !isDone(w.id, y);
+      return { streak, last7, hit, total: counted.length, yMissed };
+    }
+
+    function rutinNote(st) {
+      const today = todayStr(), start = planStart(), w = wakeHabit(), wake = wakeFor(today), tmr = wakeFor(addDays(today, 1));
+      if (!start) return "Henüz kalkış planı yok.";
+      if (today < start) return `Plan ${start === addDays(today, 1) ? "yarın" : planLabel(start)} başlıyor · ilk kalkış <b>${wakeFor(start)}</b>. Telefonu bu gece yataktan uzağa koy 📵`;
+      if (w && isDone(w.id, today)) return `✅ Bugün tamam. Yarın <b>${tmr}</b>'de kalk.`;
+      if (st.yMissed) return `⚠️ Dün kaçtı, iki gün üst üste kaçırma. Bugün hedef <b>${wake}</b>.`;
+      return `⏰ Hedef <b>${wake}</b> · ilk alarmda kalk, 30 dk içinde dışarı çık.`;
+    }
+
+    function renderRutin() {
+      if (!rutin.ready) return;
+      const today = todayStr(), st = rutinStats();
+      const day = rutin.day && st.last7.includes(rutin.day) ? rutin.day : today;
+      const wake = wakeFor(today), tmr = wakeFor(addDays(today, 1));
+
+      // Üst kart: bugünkü / yarınki kalkış ve seri
+      const head = $("rutinHead");
+      head.hidden = false;
+      head.innerHTML = `
+        <div class="rt-wake">
+          <div><div class="k">Bugün kalkış</div><div class="v">${wake || "—"}</div></div>
+          <div><div class="k">Yarın</div><div class="v sm">${tmr || "—"}</div></div>
+          <div class="gx-streak${st.streak ? "" : " off"}"><span class="fl">🔥</span><b>${st.streak}</b><span>gün<br>seri</span></div>
+        </div>
+        <div class="gx-note">${rutinNote(st)}</div>`;
+
+      // Gün seçici (son 7 gün; geçmiş günü sonradan da işaretleyebilirsin)
+      const nav = $("rutinDays");
+      nav.innerHTML = st.last7.map((d) => `<button type="button" class="day" data-d="${d}" aria-pressed="${d === day}">${
+        d === today ? "Bugün" : d === addDays(today, -1) ? "Dün" : `${shortWd(d)} ${+d.slice(8)}`}</button>`).join("");
+      nav.querySelectorAll("[data-d]").forEach((b) => b.addEventListener("click", () => { rutin.day = b.dataset.d; renderRutin(); }));
+      nav.scrollLeft = nav.scrollWidth;
+
+      // Seçili günün alışkanlıkları
+      const n = rutin.habits.filter((h) => isDone(h.id, day)).length, total = rutin.habits.length;
+      const pct = total ? Math.round((n / total) * 100) : 0;
+      const rows = rutin.habits.map((h) => {
+        const done = isDone(h.id, day), target = h.kind === "wake" ? wakeFor(day) : null;
+        return `<li class="item${done ? " done" : ""}" data-id="${h.id}">
+            <button type="button" class="tick" data-act="tog" aria-pressed="${done}" aria-label="${done ? "Geri al" : "Yaptım"}">✓</button>
+            <span class="nm" data-act="tog">${esc(h.emoji)} ${esc(h.name)}${target ? ` <span class="est">· hedef ${target}</span>` : ""}</span>
+            ${rutin.editing ? '<button type="button" class="del" data-act="del" aria-label="Kaldır">×</button>' : ""}
+          </li>`;
+      }).join("");
+      const dayName = day === today ? "BUGÜN" : day === addDays(today, -1) ? "DÜN" : planLabel(day).toLocaleUpperCase("tr-TR");
+      $("rutinCard").innerHTML = `
+        <div class="sub-h first"><span>${dayName} · ${n}/${total}</span><button type="button" id="rutinEdit">${rutin.editing ? "Bitti" : "Düzenle"}</button></div>
+        <div class="bar wide"><i style="width:${pct}%;background:#2f9e44"></i></div>
+        ${total ? `<ul class="items rt-list" style="margin-top:6px">${rows}</ul>` : '<div class="empty" style="padding:24px 8px">Henüz alışkanlık yok. Düzenle → ekle.</div>'}
+        ${rutin.editing ? `<div class="add-row" style="margin-top:10px">
+            <input id="rutinIn" placeholder="Yeni alışkanlık (ör. 🧘 10 dk esneme)" autocomplete="off" enterkeyhint="done" aria-label="Alışkanlık ekle">
+            <button class="btn" type="button" id="rutinAdd" aria-label="Ekle">+</button>
+          </div>` : ""}
+        <p class="error" id="rutinErr"></p>`;
+      $("rutinEdit").addEventListener("click", () => { rutin.editing = !rutin.editing; renderRutin(); });
+      $("rutinCard").querySelectorAll("[data-act]").forEach((el) => el.addEventListener("click", () => {
+        const id = +el.closest(".item").dataset.id;
+        if (el.dataset.act === "del") removeHabit(id); else toggleHabit(id, day);
+      }));
+      if (rutin.editing) {
+        $("rutinAdd").addEventListener("click", addHabit);
+        $("rutinIn").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addHabit(); } });
+      }
+
+      // Son 7 gün tablosu + kalkış planı
+      const start = planStart();
+      const grid = `<div class="rt-grid"><div></div>${st.last7.map((d) => `<div class="h${d === today ? " today" : ""}">${shortWd(d)}</div>`).join("")}
+        ${rutin.habits.map((h) => `<div class="e" title="${esc(h.name)}">${esc(h.emoji)}</div>${st.last7.map((d) =>
+          `<i class="${isDone(h.id, d) ? "on" : ""}${d === today ? " today" : ""}${start && d < start && !isDone(h.id, d) ? " pre" : ""}"></i>`).join("")}`).join("")}</div>`;
+      const w = wakeHabit();
+      const plan = rutin.plan.map((p, i) => {
+        const cls = p.day === today ? "today" : p.day < today ? "past" : "";
+        const mark = p.day < today && w ? (isDone(w.id, p.day) ? " ✓" : " ✗") : p.day === today && w && isDone(w.id, today) ? " ✓" : "";
+        const last = i === rutin.plan.length - 1;
+        return `<li class="${cls}"><span>${planLabel(p.day)}${last ? " ve sonrası" : ""}</span><span>${t5(p.wake_time)}${mark}</span></li>`;
+      }).join("");
+      const week = $("rutinWeek");
+      week.hidden = false;
+      week.innerHTML = `
+        <div class="sub-h first"><span>SON 7 GÜN${w ? ` · ⏰ ${st.hit}/${st.total}` : ""}</span></div>
+        ${grid}
+        ${plan ? `<div class="sub-h"><span>KALKIŞ PLANI</span></div><ul class="rt-plan">${plan}</ul>` : ""}
+        <p class="rt-rule">Kural: iki gün üst üste kaçırma. Bir gün kaçırırsan ertesi gün aynı saatte tekrar dene. Kestirme yok, kahve 18:00'e kadar.</p>`;
+    }
+
+    async function toggleHabit(hid, day) {
+      const done = isDone(hid, day);
+      if (done) rutin.logs = rutin.logs.filter((l) => !(l.habit_id === hid && l.day === day));
+      else rutin.logs.push({ habit_id: hid, day });
+      renderRutin();
+      const { error } = done
+        ? await sb.from("routine_logs").delete().eq("habit_id", hid).eq("day", day)
+        : await sb.from("routine_logs").upsert({ habit_id: hid, day }, { onConflict: "habit_id,day", ignoreDuplicates: true });
+      if (error) { toast("Kaydedilemedi: " + error.message); await loadRutin(); return; }
+      const h = rutin.habits.find((x) => x.id === hid);
+      if (!done && h?.kind === "wake" && day === todayStr()) {
+        const s = rutinStats().streak;
+        toast(s > 1 ? `🔥 ${s} gün üst üste! Devam.` : "⏰ Güzel! Şimdi 30 dk dışarı ☀️");
+      } else if (!done && rutin.habits.every((x) => isDone(x.id, day))) {
+        toast("🎉 Bugünün rutini tamam!");
+      }
+    }
+
+    async function addHabit() {
+      const input = $("rutinIn"), raw = input.value.trim();
+      if (!raw) return;
+      const m = raw.match(/^(\p{Extended_Pictographic}️?)\s*(.+)$/u);
+      const row = { name: m ? m[2] : raw, emoji: m ? m[1] : "✅", position: rutin.habits.length };
+      input.value = "";
+      const { data, error } = await sb.from("routine_habits").insert(row).select("*").single();
+      if (error) { input.value = raw; $("rutinErr").textContent = "Eklenemedi: " + error.message; return; }
+      rutin.habits.push(data);
+      renderRutin();
+      $("rutinIn")?.focus();
+    }
+
+    async function removeHabit(id) {
+      const h = rutin.habits.find((x) => x.id === id);
+      if (!h || !confirm(`“${h.name}” rutinden kaldırılsın mı? (geçmiş kayıtlar saklanır)`)) return;
+      rutin.habits = rutin.habits.filter((x) => x.id !== id);
+      renderRutin();
+      const { error } = await sb.from("routine_habits").update({ active: false }).eq("id", id);
+      if (error) { toast("Kaldırılamadı: " + error.message); await loadRutin(); }
+    }
+
+    function todayRutin() {
+      if (!rutin.ready) return;
+      const today = todayStr(), st = rutinStats(), w = wakeHabit(), wake = wakeFor(today), start = planStart();
+      const n = rutin.habits.filter((h) => isDone(h.id, today)).length;
+      if (!start) { setCard("tRutin", `<div class="tc-big">Bugün ${n}/${rutin.habits.length}</div>`); return; }
+      if (today < start) {
+        setCard("tRutin", `<div class="tc-big">Plan ${start === addDays(today, 1) ? "yarın" : planLabel(start)} başlıyor</div>
+          <div class="tc-line muted">İlk kalkış ${wakeFor(start)} · telefonu bu gece yataktan uzağa koy 📵</div>`);
+        return;
+      }
+      const woke = w && isDone(w.id, today);
+      setCard("tRutin", `<div class="tc-big">${woke ? "✅" : "⏰"} Kalkış ${wake}${woke ? " · tamam" : ""}</div>
+        <div class="tc-line muted">Bugün ${n}/${rutin.habits.length}${st.streak ? ` · 🔥 ${st.streak} gün seri` : ""} · yarın ${wakeFor(addDays(today, 1))}</div>
+        ${!woke && st.yMissed ? '<div class="tc-line warn">Dün kaçtı, bugün kaçırma.</div>' : ""}`);
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "rutin" && loggedIn) loadRutin(); });
+
+
     // ---------- Bugün ekranı ----------
     let todayTimer = null;
     function setCard(id, html) { $(id).querySelector(".tc-body").innerHTML = html; $(id).querySelector(".tc-body").classList.remove("est"); }
@@ -2583,6 +2814,7 @@
       const failed = (id, what) => setCard(id, `<div class="tc-line muted">${what} alınamadı. Dokunup sekmeyi aç.</div>`);
       fetchWeather().then(todayWeather).catch(() => failed("tWx", "Hava durumu"));
       fetchDers().then(todayDers).catch(() => failed("tDers", "Ders bilgileri"));
+      fetchRutin().then(todayRutin).catch(() => failed("tRutin", "Rutin"));
       fetchList("todo").then(() => todayList("todo")).catch(() => failed("tTodo", "To-do listesi"));
       fetchList("market").then(() => todayList("market")).catch(() => failed("tGrocery", "Market listesi"));
       fetchGym().then(todayGym).catch(() => failed("tGym", "Gym programı")).finally(() => {
@@ -2623,7 +2855,7 @@
     // ---------- Başlat ----------
     // Uygulama "Bugün" ile açılır; bildirimden (?d=...) gelindiyse mailler
     const qs = new URLSearchParams(location.search);
-    const TABS = ["bugun", "mail", "hava", "ulasim", "ders", "gym", "market", "todo"];
+    const TABS = ["bugun", "mail", "hava", "ulasim", "ders", "gym", "rutin", "market", "todo"];
     let startTab = TABS.includes(qs.get("tab")) ? qs.get("tab") : "bugun";
     if (qs.get("d")) startTab = "mail";
     showTab(startTab);
