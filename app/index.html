@@ -459,6 +459,13 @@
     .rt-plan li.today { font-weight: 700; color: var(--accent); }
     .rt-plan li.past { color: var(--muted); }
     .rt-rule { font-size: 13px; color: var(--muted); margin: 12px 2px 4px; }
+    .rt-restart { margin-top: 10px; }
+    .rt-restart .k { color: var(--muted); font-size: 13px; font-weight: 600; margin: 0 2px 6px; }
+    .rt-rb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rt-rb.one { grid-template-columns: 1fr; }
+    .rt-rb .btn-ghost { white-space: normal; text-align: left; padding: 10px 12px; }
+    .rt-rb .btn-ghost:disabled { opacity: .6; cursor: default; }
+    .rt-rb small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; margin-top: 2px; }
 
     /* Gmail butonu: kaydırırken altta sabit kalır, sayfa sonunda kartın altına oturur */
     .open-mail {
@@ -2486,6 +2493,52 @@
     const isDone = (hid, ds) => rutin.logs.some((l) => l.habit_id === hid && l.day === ds);
     const wakeHabit = () => rutin.habits.find((h) => h.kind === "wake");
     const planStart = () => rutin.plan[0]?.day || null;
+    const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const nowMin = () => toMin(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date()));
+    const daysBetween = (a, b) => Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000);
+    const MISS_GRACE = 60; // hedeften 60 dk sonra hâlâ işaretlenmemişse bugün kaçmış sayılır
+
+    // Kaçırılan kalkış: from = kaçırma serisinin ilk günü, at = yeni planın başlayacağı gün
+    function rutinMiss() {
+      const w = wakeHabit(), start = planStart(), today = todayStr();
+      if (!w || !start || today < start || isDone(w.id, today)) return null;
+      const wake = wakeFor(today);
+      const todayMissed = !!wake && nowMin() > toMin(wake) + MISS_GRACE;
+      let m = todayMissed ? today : addDays(today, -1);
+      if (m < start || isDone(w.id, m)) return null;
+      while (addDays(m, -1) >= start && !isDone(w.id, addDays(m, -1))) m = addDays(m, -1);
+      return { from: m, at: todayMissed ? addDays(today, 1) : today, todayMissed };
+    }
+
+    // Yeniden başlatılmış plan satırları. resume: kaçırdığın adımdan devam (kalan adımlar kayar); reset: ilk adımdan baştan
+    function restartRows(mode, ms) {
+      const R = ms.at;
+      if (mode === "resume") {
+        const shift = daysBetween(ms.from, R);
+        return [{ day: R, wake_time: wakeFor(ms.from) },
+          ...rutin.plan.filter((p) => p.day > ms.from).map((p) => ({ day: addDays(p.day, shift), wake_time: t5(p.wake_time) }))];
+      }
+      const shift = daysBetween(planStart(), R);
+      return rutin.plan.map((p) => ({ day: addDays(p.day, shift), wake_time: t5(p.wake_time) }));
+    }
+
+    async function restartPlan(mode) {
+      const ms = rutinMiss();
+      if (!ms) return;
+      const rows = restartRows(mode, ms), last = rows[rows.length - 1];
+      const when = ms.at === todayStr() ? "bugün" : "yarın";
+      const msg = mode === "resume"
+        ? `Kaldığın yerden devam: ${when} ${rows[0].wake_time}, sonraki adımlar ${daysBetween(ms.from, ms.at)} gün kayar (${last.wake_time} hedefi ${planLabel(last.day)}).`
+        : `Baştan başla: ${when} ${rows[0].wake_time}'dan, planın ilk adımından (${last.wake_time} hedefi ${planLabel(last.day)}).`;
+      if (!confirm(msg + "\n\nGeçmiş işaretlerin silinmez. Devam?")) return;
+      document.querySelectorAll("[data-rs]").forEach((b) => (b.disabled = true));
+      const del = await sb.from("routine_wake_plan").delete().gte("day", ms.at);
+      const ins = del.error ? del : await sb.from("routine_wake_plan").insert(rows);
+      if (ins.error) toast("Plan güncellenemedi: " + ins.error.message);
+      else toast(`↻ Plan yeniden başladı · ${when} ${rows[0].wake_time}`);
+      await loadRutin();
+      todayRutin();
+    }
 
     async function fetchRutin() {
       const [h, l, p] = await Promise.all([
@@ -2530,6 +2583,7 @@
       if (!start) return "Henüz kalkış planı yok.";
       if (today < start) return `Plan ${start === addDays(today, 1) ? "yarın" : planLabel(start)} başlıyor · ilk kalkış <b>${wakeFor(start)}</b>. Telefonu bu gece yataktan uzağa koy 📵`;
       if (w && isDone(w.id, today)) return `✅ Bugün tamam. Yarın <b>${tmr}</b>'de kalk.`;
+      if (rutinMiss()?.todayMissed) return `😕 Bugünkü <b>${wake}</b> kaçtı. Olur, ama iki gün üst üste kaçırma. Aşağıdan planı yeniden başlat ya da yarın <b>${tmr}</b>'de kalk.`;
       if (st.yMissed) return `⚠️ Dün kaçtı, iki gün üst üste kaçırma. Bugün hedef <b>${wake}</b>.`;
       return `⏰ Hedef <b>${wake}</b> · ilk alarmda kalk, 30 dk içinde dışarı çık.`;
     }
@@ -2549,7 +2603,8 @@
           <div><div class="k">Yarın</div><div class="v sm">${tmr || "—"}</div></div>
           <div class="gx-streak${st.streak ? "" : " off"}"><span class="fl">🔥</span><b>${st.streak}</b><span>gün<br>seri</span></div>
         </div>
-        <div class="gx-note">${rutinNote(st)}</div>`;
+        <div class="gx-note">${rutinNote(st)}</div>${restartBox()}`;
+      head.querySelectorAll("[data-rs]").forEach((b) => b.addEventListener("click", () => restartPlan(b.dataset.rs)));
 
       // Gün seçici (son 7 gün; geçmiş günü sonradan da işaretleyebilirsin)
       const nav = $("rutinDays");
@@ -2610,6 +2665,21 @@
         <p class="rt-rule">Kural: iki gün üst üste kaçırma. Bir gün kaçırırsan ertesi gün aynı saatte tekrar dene. Kestirme yok, kahve 18:00'e kadar.</p>`;
     }
 
+    function restartBox() {
+      const ms = rutinMiss();
+      if (!ms) return "";
+      const when = ms.at === todayStr() ? "bugün" : "yarın";
+      const a = restartRows("resume", ms), b = restartRows("reset", ms);
+      const same = JSON.stringify(a) === JSON.stringify(b);
+      return `<div class="rt-restart">
+          <div class="k">Kaçırdın, planı yeniden başlat:</div>
+          <div class="rt-rb${same ? " one" : ""}">
+            <button type="button" class="btn-ghost" data-rs="resume">↻ Kaldığın yerden<small>${when} ${a[0].wake_time} · plan ${daysBetween(ms.from, ms.at)} gün kayar</small></button>
+            ${same ? "" : `<button type="button" class="btn-ghost" data-rs="reset">⟲ Baştan başla<small>${when} ${b[0].wake_time} · ilk adımdan</small></button>`}
+          </div>
+        </div>`;
+    }
+
     async function toggleHabit(hid, day) {
       const done = isDone(hid, day);
       if (done) rutin.logs = rutin.logs.filter((l) => !(l.habit_id === hid && l.day === day));
@@ -2663,7 +2733,8 @@
       const woke = w && isDone(w.id, today);
       setCard("tRutin", `<div class="tc-big">${woke ? "✅" : "⏰"} Kalkış ${wake}${woke ? " · tamam" : ""}</div>
         <div class="tc-line muted">Bugün ${n}/${rutin.habits.length}${st.streak ? ` · 🔥 ${st.streak} gün seri` : ""} · yarın ${wakeFor(addDays(today, 1))}</div>
-        ${!woke && st.yMissed ? '<div class="tc-line warn">Dün kaçtı, bugün kaçırma.</div>' : ""}`);
+        ${!woke && rutinMiss()?.todayMissed ? '<div class="tc-line warn">Bugün kaçtı · Rutin\'den planı yeniden başlatabilirsin.</div>'
+          : !woke && st.yMissed ? '<div class="tc-line warn">Dün kaçtı, bugün kaçırma.</div>' : ""}`);
     }
     document.addEventListener("visibilitychange", () => { if (!document.hidden && currentTab === "rutin" && loggedIn) loadRutin(); });
 
